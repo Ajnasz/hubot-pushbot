@@ -1,0 +1,32 @@
+{
+  "name": "hubot-pushbot",
+  "version": "0.1.0",
+  "description": "PushBot implementation for hubot which is: \"PushBot is an IRC bot that manages the topic in an IRC channel that has a push train.\"",
+  "main": "index..js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ajnasz/hubot-pushbot"
+  },
+  "keywords": [
+    "hubot",
+    "pushbot",
+    "irc",
+    "slack"
+  ],
+  "author": {
+    "name": "Lajos Koszti"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "maintainers": [
+    {
+      "name": "Ajnasz",
+      "email": "ajnasz@ajnasz.hu"
+    }
+  ],
+  "scripts": {},
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-release": "^0.11.0"
+  }
+}
