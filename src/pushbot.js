@@ -175,7 +175,7 @@ module.exports = function (robot) {
 		},
 
 		getRoomSessions: function (room) {
-			return this.getSessions()[room] || [];
+			return this.getSessions()[room];
 		},
 
 		setRoomSessions: function (room, sessions) {
@@ -394,6 +394,7 @@ module.exports = function (robot) {
 
 	function createRoom(room) {
 		var brain = Brain();
+
 		if (!brain.getRoomSessions(room)) {
 			brain.setRoomSessions(room, []);
 		}
@@ -773,6 +774,7 @@ module.exports = function (robot) {
 
 	// .join command
 	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.join.join('|') + ')$' ), function (msg) {
+
 
 		var room = msg.message.room;
 
