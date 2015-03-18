@@ -123,6 +123,12 @@ module.exports = function (robot) {
 	}
 	LeaderCanNotLeaveError.prototype = Error.prototype;
 
+	function NotChangedError() {
+		this.name = 'NotChangedError';
+		this.message = 'Value not changed';
+	}
+	NotChangedError.prototype = Error.prototype;
+
 	function SessionHoldedError() {
 		this.name = 'SessionHoldedError';
 		this.message = 'Session holded';
@@ -427,13 +433,13 @@ module.exports = function (robot) {
 		// if leader is participating in any session in the room, don't allow to
 		// start a new one
 		// if (isUserParticipating(room, leader)) {
-		// 	return [new AlreadyInSessionError()];
+		// 	return new AlreadyInSessionError();
 		// }
 
 		roomSessions = Brain().getRoomSessions(room);
 		roomSessions.push(createSession(leader));
 
-		return [null, true];
+		return null;
 	}
 
 	function insertSession(room, leader, beforeIndex) {
@@ -442,14 +448,14 @@ module.exports = function (robot) {
 		// if leader is participating in any session in the room, don't allow to
 		// start a new one
 		// if (isUserParticipating(room, leader)) {
-		// 	return [new AlreadyInSessionError()];
+		// 	return new AlreadyInSessionError();
 		// }
 
 		roomSessions = Brain().getRoomSessions(room);
 
 		roomSessions.splice(beforeIndex, 0, createSession(leader));
 
-		return [null, true];
+		return null;
 	}
 
 	function findIndex(array, test) {
@@ -518,13 +524,13 @@ module.exports = function (robot) {
 			var sess = Session(session);
 
 			if (sess.isUserLeader(userName) && findUserSessionIndex(session, userName) > 1) {
-				return [new LeaderCanNotLeaveError()];
+				return new LeaderCanNotLeaveError();
 			}
 
 			userIndex = findUserSessionIndex(session, userName);
 
 			if (userIndex === -1) {
-				return [new UserNotFoundError()];
+				return new UserNotFoundError();
 			}
 			users = sess.getUsers();
 			users.splice(userIndex, 1);
@@ -539,9 +545,9 @@ module.exports = function (robot) {
 				brain.setRoomSessionAtIndex(room, index, session);
 			}
 
-			return [null, true];
+			return null;
 		} else {
-			return [null, false];
+			return new NotInSessionError();
 		}
 	}
 
@@ -553,16 +559,16 @@ module.exports = function (robot) {
 		sessionIndex = findSessionIndexWithUser(room, refUser);
 
 		if (sessionIndex === -1) {
-			return [new NotInSessionError()];
+			return new NotInSessionError();
 		}
 
 		session = Brain().getRoomSessionAtIndex(room, sessionIndex);
 
 		if (findUserSessionIndex(session, user) > -1) {
-			return [new AlreadyInSessionError()];
+			return new AlreadyInSessionError();
 		} else {
 			Session(session).addUser(user);
-			return [null, true];
+			return null;
 		}
 	}
 
@@ -578,16 +584,16 @@ module.exports = function (robot) {
 			sess = Session(session);
 
 			if (User(sess.getUsers()[userIndex]).getState() === state) {
-				return [null, false];
+				return new NotChangedError();
 			}
 
 			sess.getUsers()[userIndex].state = state;
 
 			brain.setRoomSessionAtIndex(room, index, session);
 
-			return [null, true];
+			return null;
 		} else {
-			return [new NotInSessionError()];
+			return new NotInSessionError();
 		}
 	}
 
@@ -604,27 +610,27 @@ module.exports = function (robot) {
 			sess = Session(session);
 
 			if (sess.isHolded()) {
-				return [new SessionHoldedError()];
+				return new SessionHoldedError();
 			}
 
 			if (!sess.isAllUserGood()) {
 				holdingUsers = sess.getUsers().map(User).filter(function (user) {
 					return !user.isGood();
 				});
-				return [new UsersNotReadyError(holdingUsers.map(User).map(function (u) {
+				return new UsersNotReadyError(holdingUsers.map(User).map(function (u) {
 					return u.getName();
-				}))];
+				}));
 			}
 
 			if (!sess.isUserLeader(userName)) {
-				return [new PermissionDeniedError()];
+				return new PermissionDeniedError();
 			}
 			removeSession(room, sess.getLeader());
 
-			return [null, true];
+			return null;
 		}
 
-		return [null, false];
+		return new NotInSessionError();
 	}
 
 	function setRoomState(room, userName, state) {
@@ -638,23 +644,23 @@ module.exports = function (robot) {
 			sess = Session(session);
 
 			if (sess.isHolded()) {
-				return [new SessionHoldedError()];
+				return new SessionHoldedError();
 			}
 
 			/*
 			if (!sess.isUserLeader(userName)) {
-				return [new NotLeadingError()];
+				return new NotLeadingError();
 			}
 			*/
 
 			if (!sess.isAllUserGood()) {
-				return [new UsersNotReadyError(sess.getUsers().map(User).map(function (u) {
+				return new UsersNotReadyError(sess.getUsers().map(User).map(function (u) {
 					return u.getName();
-				}))];
+				}));
 			}
 
 			if (sess.getState() === state) {
-				return [null, false];
+				return new NotChangedError();
 			}
 
 			sess.setState(state);
@@ -663,9 +669,9 @@ module.exports = function (robot) {
 
 			brain.setRoomSessionAtIndex(room, index, session);
 
-			return [null, true];
+			return null;
 		} else {
-			return [new NotLeadingError()];
+			return new NotLeadingError();
 		}
 	}
 
@@ -679,15 +685,15 @@ module.exports = function (robot) {
 			sess = Session(brain.getRoomSessionAtIndex(room, index));
 
 			if (!sess.isHolded()) {
-				return [null, false];
+				return new NotChangedError();
 			}
 
 			sess.unhold();
 			sess.setHoldMessage('');
 
-			return [null, true];
+			return null;
 		} else {
-			return [new NotInSessionError()];
+			return new NotInSessionError();
 		}
 	}
 
@@ -703,9 +709,9 @@ module.exports = function (robot) {
 			sess.hold();
 			sess.setHoldMessage(message);
 
-			return [null, true];
+			return null;
 		} else {
-			return [new NotInSessionError()];
+			return new NotInSessionError();
 		}
 	}
 
@@ -722,16 +728,16 @@ module.exports = function (robot) {
 		var session;
 
 		if (index === -1) {
-			return [new NotInSessionError()];
+			return new NotInSessionError();
 		}
 
 		session = Brain().getRoomSessionAtIndex(room, index);
 		if (Session(session).getLeader() !== leader) {
-			return [new NotLeadingError()];
+			return new NotLeadingError();
 		}
 
 		if (leader === userName) {
-			return [new UserNotKickableError()];
+			return new UserNotKickableError();
 		}
 
 		return leaveSession(room, userName);
@@ -741,17 +747,20 @@ module.exports = function (robot) {
 		var sessionIndex = findSessionIndexWithUser(room, userName);
 
 		if (sessionIndex === -1) {
-			return [new NotInSessionError()];
+			return new NotInSessionError();
 		}
 
 		var session = Brain().getRoomSessionAtIndex(room, sessionIndex);
 		var sess = Session(session);
 
-		var changed = sess.getMessage() !== message;
+		if (sess.getMessage() === message) {
+			return new NotChangedError();
+		}
 
 		sess.setMessage(message);
 
-		return [null, changed];
+		return null;
+
 	}
 
 	function setTopic(msg) {
@@ -769,13 +778,12 @@ module.exports = function (robot) {
 
 		var leader = msg.message.user.name;
 
-		var result = addSession(room, leader);
-		var err = result[0], ok = result[1];
+		var err = addSession(room, leader);
 
 		if (err) {
 			msg.reply(err);
 			robot.logger.error(err);
-		} else if (ok) {
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -786,13 +794,12 @@ module.exports = function (robot) {
 
 		var userName = msg.message.user.name;
 
-		var result = leaveSession(room, userName);
-		var err = result[0], ok = result[1];
+		var err = leaveSession(room, userName);
 
-		if (err) {
+		if (err && !(err instanceof NotInSessionError)) {
 			msg.reply(err.message);
 			robot.logger.error('.nevermind:', err);
-		} else if (ok) {
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -803,13 +810,12 @@ module.exports = function (robot) {
 		var leader = msg.match[1];
 		var userName = msg.message.user.name;
 
-		var result = joinSession(room, leader, userName);
-		var err = result[0], ok = result[1];
+		var err = joinSession(room, leader, userName);
 
 		if (err) {
 			msg.reply(err.message);
 			robot.logger.error('.join with:', err);
-		} else if (ok) {
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -821,20 +827,18 @@ module.exports = function (robot) {
 		var leader = msg.message.user.name;
 
 		var sessionIndex = findSessionIndexWithUser(room, refUser);
-		var result, err, ok;
+		var err;
 
 		if (sessionIndex === -1) {
 			err = new NotInSessionError();
 		} else {
-			result = insertSession(room, leader, sessionIndex);
-			err = result[0];
-			ok = result[1];
+			err = insertSession(room, leader, sessionIndex);
 		}
 
 		if (err) {
 			msg.reply(err.message);
 			robot.logger.error('.join before:', err);
-		} else if (ok) {
+		} else {
 			setTopic(msg);
 		}
 
@@ -845,13 +849,14 @@ module.exports = function (robot) {
 		var userName = msg.message.user.name;
 		var room = msg.message.room;
 
-		var result = finish(room, userName);
-		var err = result[0], ok = result[1];
+		var err = finish(room, userName);
 		var nextSession;
 
 		if (err) {
-			msg.reply(err.message);
-		} else if (ok) {
+			if (!(err instanceof NotInSessionError)) {
+				msg.reply(err.message);
+			}
+		} else {
 			nextSession = Brain().getRoomSessionAtIndex(room, 0);
 
 			if (nextSession) {
@@ -869,13 +874,14 @@ module.exports = function (robot) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
-		var result = setRoomState(room, userName, msg.match[1]);
-		var err = result[0], ok = result[1];
+		var err = setRoomState(room, userName, msg.match[1]);
 
 		if (err) {
-			msg.reply(err.message);
-			robot.logger.error('.at:', err);
-		} else if (ok) {
+			if (!(err instanceof NotChangedError)) {
+				msg.reply(err.message);
+				robot.logger.error('.at:', err);
+			}
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -887,13 +893,14 @@ module.exports = function (robot) {
 		var session, sess;
 		var sessionIndex;
 
-		var result = setUserState(room, userName, userStates.good);
-		var err = result[0], ok = result[1];
+		var err = setUserState(room, userName, userStates.good);
 
 		if (err) {
-			msg.reply(err.message);
-			robot.logger.error('.good:', err);
-		} else if (ok) {
+			if (!(err instanceof NotChangedError)) {
+				msg.reply(err.message);
+				robot.logger.error('.good:', err);
+			}
+		} else {
 			sessionIndex = findSessionIndexWithUser(room, userName);
 
 			session = Brain().getRoomSessionAtIndex(room, sessionIndex);
@@ -912,13 +919,14 @@ module.exports = function (robot) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
-		var result = setUserState(room, userName, userStates.uhoh);
-		var err = result[0], ok = result[1];
+		var err = setUserState(room, userName, userStates.uhoh);
 
 		if (err) {
-			msg.reply(err);
-			robot.logger.error('.uhoh:', err);
-		} else if (ok) {
+			if (!(err instanceof NotChangedError)) {
+				msg.reply(err);
+				robot.logger.error('.uhoh:', err);
+			}
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -930,13 +938,12 @@ module.exports = function (robot) {
 		var userName = msg.message.user.name;
 		var message = msg.match[1];
 
-		var result = holdSession(room, userName, message);
-		var err = result[0], ok = result[1];
+		var err = holdSession(room, userName, message);
 
 		if (err) {
 			msg.reply(err);
 			robot.logger.error('.hold:', err);
-		} else if (ok) {
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -946,13 +953,14 @@ module.exports = function (robot) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
-		var result = unholdSession(room, userName);
-		var err = result[0], ok = result[1];
+		var err = unholdSession(room, userName);
 
 		if (err) {
-			msg.reply(err);
-			robot.logger.error('.unhold:', err);
-		} else if (ok) {
+			if (!(err instanceof NotChangedError)) {
+				msg.reply(err);
+				robot.logger.error('.unhold:', err);
+			}
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -993,13 +1001,12 @@ module.exports = function (robot) {
 
 		var user = msg.message.user.name;
 
-		var result = kickUser(room, user, msg.match[1]);
-		var err = result[0], ok = result[1];
+		var err = kickUser(room, user, msg.match[1]);
 
-		if (err) {
+		if (err && !(err instanceof NotInSessionError)) {
 			msg.reply(err.message);
 			robot.logger.error('.kick:', err);
-		} else if (ok) {
+		} else {
 			setTopic(msg);
 		}
 	});
@@ -1009,12 +1016,13 @@ module.exports = function (robot) {
 
 		var userName = msg.message.user.name;
 
-		var result = setMessage(room, userName, msg.match[1]);
-		var err = result[0], changed = result[1];
+		var err = setMessage(room, userName, msg.match[1]);
 
-		if (err) {
-			msg.reply(err.message);
-		} else if (changed) {
+		if (err ) {
+			if (!(err instanceof NotChangedError)) {
+				msg.reply(err.message);
+			}
+		} else {
 			setTopic(msg);
 		}
 	});
