@@ -24,9 +24,14 @@
       "email": "ajnasz@ajnasz.hu"
     }
   ],
-  "scripts": {},
+  "scripts": {
+    "test": "$(npm bin)/mocha --ui bdd"
+  },
   "devDependencies": {
+    "chai": "^2.1.2",
     "grunt": "^0.4.5",
-    "grunt-release": "^0.11.0"
+    "grunt-release": "^0.11.0",
+    "mocha": "^2.2.1",
+    "sinon": "^1.14.1"
   }
 }
