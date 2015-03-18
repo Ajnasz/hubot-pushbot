@@ -152,6 +152,16 @@ describe('pushbot', function () {
 			// TODO We should be able to set this from configuration
 			expect(session.users[0].state).to.deep.equal('waiting');
 		});
+
+		it('should create as many sessions, as many times called', function () {
+			var res = onMessage(robot, '.join', room);
+			res.item.cb(res.msg);
+			res = onMessage(robot, '.join', room);
+			res.item.cb(res.msg);
+			var roomSessions = robot.brain.data.pushbot[room];
+
+			expect(roomSessions).to.have.length(2);
+		});
 	});
 
 	describe('.clearplease', function () {
