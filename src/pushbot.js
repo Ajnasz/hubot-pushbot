@@ -27,9 +27,9 @@ module.exports = function (robot) {
 		joinWith: ['join with'],
 		hold: ['hold'],
 		unhold: ['unhold'],
-		uhoh: ['uhoh'],
-		good: ['good', 'ok'],
-		nevermind: ['leave', 'nevermind'],
+		uhoh: ['uhoh', 'notgood', 'bad', 'fuck', 'fucked'],
+		good: ['good', 'ok', 'in', 'go', 'great'],
+		nevermind: ['leave', 'nevermind', 'nm'],
 		message: ['message'],
 		kick: ['kick'],
 		at: ['at'],
@@ -38,23 +38,30 @@ module.exports = function (robot) {
 		clearplease: ['clearplease']
 	};
 
+	var bot = '.';
+
 	var messageRegexp = '([\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+)';
 
 	var defaultMessage = '-';
 
 	var emptyMessage = '-';
 
-	var states = {
-		clear: 'clear',
-		preprod: 'preprod',
-		prod: 'prod'
-	};
-
 	var userStates = {
 		good: 'good',
 		uhoh: 'uhoh',
 		waiting: 'waiting'
 	};
+
+	var validStates = [
+		'commit',
+		'push',
+		'trunk',
+		'qa',
+		'dev',
+		'preprod',
+		'prod',
+		'production'
+	];
 
 	robot.brain.on('loaded', function () {
 		if (!robot.brain.data.pushbot) {
@@ -370,7 +377,7 @@ module.exports = function (robot) {
 			msg.push(sess.getMessage());
 		}
 
-		if (sess.getState() && sess.getState() !== states.clear) {
+		if (sess.getState()) {
 			msg.push('<' + sess.getState() + '>');
 		}
 
@@ -389,7 +396,7 @@ module.exports = function (robot) {
 	function createSession(leader) {
 		return {
 			leader: leader,
-			state: states.clear,
+			state: '',
 			holded: false,
 			holdMessage: '',
 			message: defaultMessage,
@@ -640,7 +647,7 @@ module.exports = function (robot) {
 			}
 			*/
 
-			if (sess.getState() && sess.getState() !== states.clear || !sess.isAllUserGood()) {
+			if (!sess.isAllUserGood()) {
 				return [new UsersNotReadyError(sess.getUsers().map(User).map(function (u) {
 					return u.getName();
 				}))];
@@ -756,7 +763,7 @@ module.exports = function (robot) {
 	}
 
 	// .join command
-	robot.hear(new RegExp('^\\.(?:' + commands.join.join('|') + ')$' ), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.join.join('|') + ')$' ), function (msg) {
 
 		var room = msg.message.room;
 
@@ -774,7 +781,7 @@ module.exports = function (robot) {
 	});
 
 	// .nevermind command
-	robot.hear(new RegExp('^\\.(?:' + commands.nevermind.join('|') + ')$' ), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.nevermind.join('|') + ')$' ), function (msg) {
 		var room = msg.message.room;
 
 		var userName = msg.message.user.name;
@@ -791,7 +798,7 @@ module.exports = function (robot) {
 	});
 
 	// .join with command
-	robot.hear(new RegExp('^\\.(?:' + commands.joinWith.join('|') + ') (\\w+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinWith.join('|') + ') (\\w+)$'), function (msg) {
 		var room = msg.message.room;
 		var leader = msg.match[1];
 		var userName = msg.message.user.name;
@@ -808,7 +815,7 @@ module.exports = function (robot) {
 	});
 
 	// .join before command
-	robot.hear(new RegExp('^\\.(?:' + commands.joinBefore.join('|') + ') (\\w+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinBefore.join('|') + ') (\\w+)$'), function (msg) {
 		var room = msg.message.room;
 		var refUser = msg.match[1];
 		var leader = msg.message.user.name;
@@ -834,7 +841,7 @@ module.exports = function (robot) {
 	});
 
 	// .done command
-	robot.hear(new RegExp('^\\.(?:' + commands.done.join('|') + ')$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.done.join('|') + ')$'), function (msg) {
 		var userName = msg.message.user.name;
 		var room = msg.message.room;
 
@@ -858,7 +865,7 @@ module.exports = function (robot) {
 	});
 
 	// at command
-	robot.hear(new RegExp('^\\.(?:' + commands.at.join('|') + ') ([a-z]+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.at.join('|') + ') (' + validStates.join('|') + ')$'), function (msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
@@ -874,7 +881,7 @@ module.exports = function (robot) {
 	});
 
 	// .good command
-	robot.hear(new RegExp('^\\.(?:' + commands.good.join('|') + ')$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.good.join('|') + ')$'), function (msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 		var session, sess;
@@ -901,7 +908,7 @@ module.exports = function (robot) {
 	});
 
 	// .uhoh command
-	robot.hear(new RegExp('^\\.(?:' + commands.uhoh.join('|') + ')$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.uhoh.join('|') + ')$'), function (msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
@@ -917,7 +924,7 @@ module.exports = function (robot) {
 	});
 
 	// .hold command
-	robot.hear(new RegExp('^\\.(?:' + commands.hold.join('|') + ') ' + messageRegexp + '$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.hold.join('|') + ') ' + messageRegexp + '$'), function (msg) {
 		robot.logger.debug('COMMANBD HOLD');
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
@@ -935,7 +942,7 @@ module.exports = function (robot) {
 	});
 
 	// .unhold command
-	robot.hear(new RegExp('^\\.(?:' + commands.unhold.join('|') + ')$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.unhold.join('|') + ')$'), function (msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
@@ -951,7 +958,7 @@ module.exports = function (robot) {
 	});
 
 	// .sessions command
-	robot.hear(new RegExp('^\\.(?:' + commands.sessions.join('|') + ')$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.sessions.join('|') + ')$'), function (msg) {
 		var room = msg.message.room;
 
 		var roomSessions = Brain().getRoomSessions(room);
@@ -965,7 +972,7 @@ module.exports = function (robot) {
 					msg.push('HOLD: ☂ ' + sess.getHoldMessage() + ' ☂');
 				}
 
-				if (sess.getState() !== states.clear) {
+				if (sess.getState()) {
 					msg.push('<' + sess.getState() + '>');
 				}
 
@@ -981,7 +988,7 @@ module.exports = function (robot) {
 	});
 
 	// .kick command
-	robot.hear(new RegExp('^\\.(?:' + commands.kick.join('|') + ') ([\\w#]+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.kick.join('|') + ') ([\\w#]+)$'), function (msg) {
 		var room = msg.message.room;
 
 		var user = msg.message.user.name;
@@ -997,7 +1004,7 @@ module.exports = function (robot) {
 		}
 	});
 
-	robot.hear(new RegExp('^\\.(?:' + commands.message.join('|') + ') ' + messageRegexp + '$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.message.join('|') + ') ' + messageRegexp + '$'), function (msg) {
 		var room = msg.message.room;
 
 		var userName = msg.message.user.name;
@@ -1012,7 +1019,7 @@ module.exports = function (robot) {
 		}
 	});
 
-	robot.hear(new RegExp('^\\.' + commands.clearplease.join('|') + '$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.clearplease.join('|') + ')$'), function (msg) {
 		Brain().clearRoomSessions(msg.message.room);
 		setTopic(msg);
 	});
