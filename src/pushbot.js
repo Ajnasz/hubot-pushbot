@@ -774,8 +774,6 @@ module.exports = function (robot) {
 
 	// .join command
 	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.join.join('|') + ')$' ), function (msg) {
-
-
 		var room = msg.message.room;
 
 		var leader = msg.message.user.name;
@@ -823,7 +821,7 @@ module.exports = function (robot) {
 	});
 
 	// .join before command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinBefore.join('|') + ') (\\w+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinBefore.join('|') + ') ([\\w_-]+)$'), function (msg) {
 		var room = msg.message.room;
 		var refUser = msg.match[1];
 		var leader = msg.message.user.name;
