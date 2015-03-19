@@ -614,7 +614,7 @@ module.exports = function (robot) {
 				return new SessionHoldedError();
 			}
 
-			if (!sess.isAllUserGood()) {
+			if (sess.getState() && !sess.isAllUserGood()) {
 				holdingUsers = sess.getUsers().map(User).filter(function (user) {
 					return !user.isGood();
 				});
@@ -638,6 +638,8 @@ module.exports = function (robot) {
 		var session, sess, brain;
 
 		var index = findSessionIndexWithUser(room, userName);
+
+		robot.logger.debug('set room state call', index, room, userName, state);
 
 		if (index !== -1) {
 			brain = Brain();
@@ -668,7 +670,7 @@ module.exports = function (robot) {
 
 			sess.resetUsers();
 
-			brain.setRoomSessionAtIndex(room, index, session);
+			// brain.setRoomSessionAtIndex(room, index, session);
 
 			return null;
 		} else {
@@ -796,7 +798,7 @@ module.exports = function (robot) {
 
 		var err = leaveSession(room, userName);
 
-		if (err && !(err instanceof NotInSessionError)) {
+		if (err && err.name !== 'NotInSessionError') {
 			msg.reply(err.message);
 			robot.logger.error('.nevermind:', err);
 		} else {
@@ -853,7 +855,7 @@ module.exports = function (robot) {
 		var nextSession;
 
 		if (err) {
-			if (!(err instanceof NotInSessionError)) {
+			if (err.name !== 'NotInSessionError') {
 				msg.reply(err.message);
 			}
 		} else {
@@ -876,8 +878,10 @@ module.exports = function (robot) {
 
 		var err = setRoomState(room, userName, msg.match[1]);
 
+		robot.logger.debug('set room state', err);
+
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (err.name !== 'NotChangedError') {
 				msg.reply(err.message);
 				robot.logger.error('.at:', err);
 			}
@@ -896,7 +900,7 @@ module.exports = function (robot) {
 		var err = setUserState(room, userName, userStates.good);
 
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (err.name !== 'NotChangedError') {
 				msg.reply(err.message);
 				robot.logger.error('.good:', err);
 			}
@@ -922,7 +926,7 @@ module.exports = function (robot) {
 		var err = setUserState(room, userName, userStates.uhoh);
 
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (err.name !== 'NotChangedError') {
 				msg.reply(err);
 				robot.logger.error('.uhoh:', err);
 			}
@@ -956,7 +960,7 @@ module.exports = function (robot) {
 		var err = unholdSession(room, userName);
 
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (err.name !== 'NotChangedError') {
 				msg.reply(err);
 				robot.logger.error('.unhold:', err);
 			}
@@ -1003,7 +1007,7 @@ module.exports = function (robot) {
 
 		var err = kickUser(room, user, msg.match[1]);
 
-		if (err && !(err instanceof NotInSessionError)) {
+		if (err && err.name !== 'NotInSessionError') {
 			msg.reply(err.message);
 			robot.logger.error('.kick:', err);
 		} else {
@@ -1019,7 +1023,7 @@ module.exports = function (robot) {
 		var err = setMessage(room, userName, msg.match[1]);
 
 		if (err ) {
-			if (!(err instanceof NotChangedError)) {
+			if (err.name !== 'NotChangedError') {
 				msg.reply(err.message);
 			}
 		} else {
