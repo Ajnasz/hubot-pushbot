@@ -614,7 +614,7 @@ module.exports = function (robot) {
 				return new SessionHoldedError();
 			}
 
-			if (sess.getState() && !sess.isAllUserGood()) {
+			if (!sess.isAllUserGood()) {
 				holdingUsers = sess.getUsers().map(User).filter(function (user) {
 					return !user.isGood();
 				});
@@ -654,7 +654,7 @@ module.exports = function (robot) {
 			}
 			*/
 
-			if (!sess.isAllUserGood()) {
+			if (sess.getState() && !sess.isAllUserGood()) {
 				return new UsersNotReadyError(sess.getUsers().map(User).map(function (u) {
 					return u.getName();
 				}));
