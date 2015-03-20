@@ -63,6 +63,8 @@ module.exports = function (robot) {
 		'production'
 	];
 
+	var userNameRegexp = '[\\w_-]+';
+
 	robot.brain.on('loaded', function () {
 		if (!robot.brain.data.pushbot) {
 			robot.brain.data.pushbot = {};
@@ -807,7 +809,7 @@ module.exports = function (robot) {
 	});
 
 	// .join with command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinWith.join('|') + ') (\\w+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinWith.join('|') + ') (' + userNameRegexp + ')$'), function (msg) {
 		var room = msg.message.room;
 		var leader = msg.match[1];
 		var userName = msg.message.user.name;
@@ -823,7 +825,7 @@ module.exports = function (robot) {
 	});
 
 	// .join before command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinBefore.join('|') + ') ([\\w_-]+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinBefore.join('|') + ') (' + userNameRegexp + ')$'), function (msg) {
 		var room = msg.message.room;
 		var refUser = msg.match[1];
 		var leader = msg.message.user.name;
