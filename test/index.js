@@ -180,6 +180,38 @@ describe('pushbot', function () {
 	});
 
 	describe('.join with', function () {
+		var newUserName, newUserId;
+		beforeEach(function () {
+			var msg = createMessage(robot, '.join', room, userName, userId);
+			callCommand(findCommand(robot, '.join'), msg);
+			newUserName = 'user2-' + rand();
+			newUserId = rand();
+		});
+		afterEach(function () {
+			newUserName = null;
+			newUserId = null;
+		});
+		it('should add a new user to the existing session', function () {
+			var cmd = '.join with ' + userName;
+			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+			callCommand(findCommand(robot, cmd), msg);
+			var roomSessions = robot.brain.data.pushbot[room];
+
+			expect(roomSessions[0].users).to.have.length(2);
+		});
+		it('set the second user to the new one', function () {
+			var cmd = '.join with ' + userName;
+			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+			callCommand(findCommand(robot, cmd), msg);
+			var roomSessions = robot.brain.data.pushbot[room];
+
+			expect(roomSessions[0].users[1]).to.have.property('name', newUserName);
+		});
+	});
+
+	describe('.join before', function () {
 		var newUserName = 'user2-' + rand(),
 			newUserId = rand();
 		beforeEach(function () {
@@ -278,21 +310,118 @@ describe('pushbot', function () {
 			expect(session).to.have.property('holdMessage', '');
 		});
 	});
-	describe.skip('.uhoh', function () {
+	describe('.uhoh', function () {
 		beforeEach(function () {
 			var msg = createMessage(robot, '.join', room, userName, userId);
 			callCommand(findCommand(robot, '.join'), msg);
 		});
 		afterEach(function () {
 		});
-	});
-	describe.skip('.good', function () {});
-	describe.skip('.nevermind', function () {});
-	describe.skip('.message', function () {});
-	describe.skip('.at', function () {});
-	describe.skip('.done', function () {});
-	describe.skip('.sessions', function () {});
 
+		it('should set user status to uhoh', function () {
+			var msg = createMessage(robot, '.uhoh', room, userName, userId);
+			callCommand(findCommand(robot, '.uhoh'), msg);
+			var session = robot.brain.data.pushbot[room][0];
+
+			expect(session.users[0]).to.have.property('state', 'uhoh');
+		});
+	});
+	describe('.good', function () {
+		beforeEach(function () {
+			var msg = createMessage(robot, '.join', room, userName, userId);
+			callCommand(findCommand(robot, '.join'), msg);
+		});
+		afterEach(function () {
+		});
+
+		it('should set user status to good', function () {
+			var msg = createMessage(robot, '.good', room, userName, userId);
+			callCommand(findCommand(robot, '.good'), msg);
+			var session = robot.brain.data.pushbot[room][0];
+
+			expect(session.users[0]).to.have.property('state', 'good');
+		});
+	});
+	describe('.nevermind', function () {
+		beforeEach(function () {
+			var msg = createMessage(robot, '.join', room, userName, userId);
+			callCommand(findCommand(robot, '.join'), msg);
+		});
+		afterEach(function () {
+		});
+
+		it('should remove the user from the channel', function () {
+			var testUserName = 'user-' + rand();
+			var testUserId = rand();
+			var cmd = '.join with ' + userName;
+			var msg = createMessage(robot, cmd, room, testUserName, testUserId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			var roomSessions = robot.brain.data.pushbot[room];
+
+			expect(roomSessions[0].users).to.have.length(2);
+
+			cmd = '.nevermind';
+			msg = createMessage(robot, cmd, room, testUserName, testUserId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(roomSessions[0].users).to.have.length(1);
+
+		});
+	});
+	describe('.message', function () {
+		beforeEach(function () {
+			var msg = createMessage(robot, '.join', room, userName, userId);
+			callCommand(findCommand(robot, '.join'), msg);
+		});
+		afterEach(function () {
+		});
+
+		it('should message property of the session', function () {
+			var message = 'This is a message ' + rand();
+			var cmd = '.message ' + message;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			var roomSessions = robot.brain.data.pushbot[room];
+
+			expect(roomSessions[0]).to.have.property('message', message);
+		});
+	});
+	describe('.at', function () {
+		beforeEach(function () {
+			var msg = createMessage(robot, '.join', room, userName, userId);
+			callCommand(findCommand(robot, '.join'), msg);
+		});
+		afterEach(function () {
+		});
+
+		it('should set session status', function () {
+			var state = 'prod';
+			var cmd = '.at ' + state;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			var roomSessions = robot.brain.data.pushbot[room];
+
+			expect(roomSessions[0]).to.have.property('state', state);
+		});
+	});
+	describe('.done', function () {
+		beforeEach(function () {
+			var msg = createMessage(robot, '.join', room, userName, userId);
+			callCommand(findCommand(robot, '.join'), msg);
+		});
+		afterEach(function () {
+		});
+		it('should remove session', function () {
+			var cmd = '.done';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(robot.brain.data.pushbot[room]).to.have.length(0);
+		});
+	});
 	describe('.clearplease', function () {
 		it('should remove all sessions from the room', function () {
 			var msg = createMessage(robot, '.clearplease', room, userName, userId);
@@ -309,4 +438,5 @@ describe('pushbot', function () {
 			msg.topic.restore();
 		});
 	});
+	describe.skip('.sessions', function () {});
 });
