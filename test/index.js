@@ -124,23 +124,26 @@ describe('pushbot', function () {
 		it('should add create a storage for room sessions', function () {
 			expect(robot.brain.data.pushbot[room]).to.be.an('undefined');
 
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			expect(robot.brain.data.pushbot).to.be.an('object');
 			expect(robot.brain.data.pushbot[room]).to.be.an('array');
 		});
 
 		it('should add session to robot brain', function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			expect(robot.brain.data.pushbot[room]).to.have.length(1);
 		});
 
 		it('should set properties to session', function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			var session = robot.brain.data.pushbot[room][0];
 
@@ -154,8 +157,9 @@ describe('pushbot', function () {
 		});
 
 		it('should add sender to users list', function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			var session = robot.brain.data.pushbot[room][0];
 
@@ -169,21 +173,70 @@ describe('pushbot', function () {
 		});
 
 		it('should create as many sessions, as many times called', function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
-			msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+
+			msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 			var roomSessions = robot.brain.data.pushbot[room];
 
 			expect(roomSessions).to.have.length(2);
+		});
+
+		describe('set topic', function () {
+			it('should add username to room topic', function () {
+				var cmd = '.join';
+				var msg = createMessage(robot, cmd, room, userName, userId);
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName);
+
+				msg.topic.restore();
+			});
+
+			it('should separate sessions by |', function () {
+				var cmd = '.join';
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				callCommand(findCommand(robot, cmd), msg);
+				var newUserName = 'user-' + rand();
+				var newUserId = rand();
+				msg = createMessage(robot, cmd, room, newUserName, newUserId);
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName);
+
+				msg.topic.restore();
+
+				msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName + ' | ' + userName);
+
+				msg.topic.restore();
+			});
 		});
 	});
 
 	describe('.join with', function () {
 		var newUserName, newUserId;
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
 			newUserName = 'user2-' + rand();
 			newUserId = rand();
 		});
@@ -209,27 +262,83 @@ describe('pushbot', function () {
 
 			expect(roomSessions[0].users[1]).to.have.property('name', newUserName);
 		});
+
+		describe('set topic', function () {
+			it('should add new username to title', function () {
+				var cmd = '.join with ' + userName;
+				var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName + ' + ' + newUserName);
+
+				msg.topic.restore();
+			});
+
+			it('should add new username to title', function () {
+				var cmd = '.join with ' + userName;
+				var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName + ' + ' + newUserName);
+
+				msg.topic.restore();
+			});
+
+			it('should add new username to title', function () {
+				var cmd = '.join';
+				var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName);
+				msg.topic.restore();
+				cmd = '.join with ' + newUserName;
+				msg = createMessage(robot, cmd, room, userName, userId);
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName + ' + ' + userName);
+				msg.topic.restore();
+			});
+		});
 	});
 
 	describe('.join before', function () {
 		var newUserName = 'user2-' + rand(),
 			newUserId = rand();
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
 		it('should add a new session', function () {
-			var msg = createMessage(robot, '.join before ' + userName, room, newUserName, newUserId);
-			callCommand(findCommand(robot, '.join before ' + userName), msg);
+			var cmd = '.join before ' + userName;
+			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+			callCommand(findCommand(robot, cmd), msg);
 			var roomSessions = robot.brain.data.pushbot[room];
 
 			expect(roomSessions).to.have.length(2);
 		});
 		it('should before the other session, which has mentioned username', function () {
-			var msg = createMessage(robot, '.join before ' + userName, room, newUserName, newUserId);
-			callCommand(findCommand(robot, '.join before ' + userName), msg);
+			var cmd = '.join before ' + userName;
+			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+			callCommand(findCommand(robot, cmd), msg);
+
 			var roomSessions = robot.brain.data.pushbot[room];
 
 			expect(roomSessions[0]).to.have.property('leader', newUserName);
@@ -237,8 +346,10 @@ describe('pushbot', function () {
 		});
 
 		it('should have the same properties as the session with .join', function () {
-			var msg = createMessage(robot, '.join before ' + userName, room, newUserName, newUserId);
-			callCommand(findCommand(robot, '.join before ' + userName), msg);
+			var cmd = '.join before ' + userName;
+			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+			callCommand(findCommand(robot, cmd), msg);
+
 			var session = robot.brain.data.pushbot[room][0];
 
 			expect(session).to.have.property('leader', msg.message.user.name);
@@ -257,18 +368,39 @@ describe('pushbot', function () {
 			// TODO We should be able to set this from configuration
 			expect(session.users[0].state).to.deep.equal('waiting');
 		});
+
+		describe('set topic', function () {
+			it('should add usernames to topic in order', function () {
+				var users = ['user-' + rand(), 'user-' + rand()];
+				users.forEach(function (name, i) {
+					var cmd = '.join before ' + userName;
+					var msg = createMessage(robot, cmd, room, name, rand());
+
+					sinon.spy(msg, 'topic');
+
+					callCommand(findCommand(robot, cmd), msg);
+					sinon.assert.calledOnce(msg.topic);
+					sinon.assert.calledWithExactly(msg.topic, users.slice(0, i + 1).concat([userName]).join(' | '));
+
+					msg.topic.restore();
+				});
+			});
+		});
 	});
 
 	describe('.hold', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
 		it('should set session holded property to true', function () {
-			var msg = createMessage(robot, '.hold hold message', room, userName, userId);
-			callCommand(findCommand(robot, '.hold hold message'), msg);
+			var holdMessage = 'hold message - ' + rand();
+			var cmd = '.hold ' + holdMessage;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			var session = robot.brain.data.pushbot[room][0];
 
@@ -277,50 +409,92 @@ describe('pushbot', function () {
 
 		it('should set session holdMessage property to given message', function () {
 			var holdMessage = 'hold message - ' + rand();
-			var msg = createMessage(robot, '.hold ' + holdMessage, room, userName, userId);
-			callCommand(findCommand(robot, '.hold ' + holdMessage), msg);
+			var cmd = '.hold ' + holdMessage;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			var session = robot.brain.data.pushbot[room][0];
 
 			expect(session).to.have.property('holdMessage', holdMessage);
 		});
 
+		describe('set title', function () {
+			it('should add HOLD and hold message to title', function () {
+				var holdMessage = 'hold message - ' + rand();
+				var cmd = '.hold ' + holdMessage;
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				var regexp = new RegExp('^HOLD: . ' + holdMessage);
+				sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
+
+				msg.topic.restore();
+			});
+		});
 	});
 
 	describe('.unhold', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
 		it('should set holded channel to unhold', function () {
 			var holdMessage = 'hold message - ' + rand();
-			var msg = createMessage(robot, '.hold ' + holdMessage, room, userName, userId);
-			callCommand(findCommand(robot, '.hold ' + holdMessage), msg);
+			var cmd = '.hold ' + holdMessage;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			var session = robot.brain.data.pushbot[room][0];
 
 			expect(session).to.have.property('holdMessage', holdMessage);
 
-			msg = createMessage(robot, '.unhold', room, userName, userId);
-			callCommand(findCommand(robot, '.unhold'), msg);
+			cmd = '.unhold';
+			msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 
 			expect(session).to.have.property('holded', false);
 			expect(session).to.have.property('holdMessage', '');
 		});
+
+		describe('set topic', function () {
+			it('should restore the original title', function () {
+				var holdMessage = 'hold message - ' + rand();
+				var cmd = '.hold ' + holdMessage;
+				var msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+
+				cmd = '.unhold';
+				msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName);
+			});
+		});
 	});
 	describe('.uhoh', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
 
 		it('should set user status to uhoh', function () {
-			var msg = createMessage(robot, '.uhoh', room, userName, userId);
-			callCommand(findCommand(robot, '.uhoh'), msg);
+			var cmd = '.uhoh';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 			var session = robot.brain.data.pushbot[room][0];
 
 			expect(session.users[0]).to.have.property('state', 'uhoh');
@@ -328,24 +502,52 @@ describe('pushbot', function () {
 	});
 	describe('.good', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
 
 		it('should set user status to good', function () {
-			var msg = createMessage(robot, '.good', room, userName, userId);
-			callCommand(findCommand(robot, '.good'), msg);
+			var cmd = '.good';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 			var session = robot.brain.data.pushbot[room][0];
 
 			expect(session.users[0]).to.have.property('state', 'good');
 		});
+
+		it('should send with everyone is ready if every user is good', function () {
+			var cmd = '.good';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+
+			sinon.spy(msg, 'send');
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			sinon.assert.calledWithExactly(msg.send, userName + ': Everyone is ready');
+		});
+
+		describe('set topic', function () {
+			it('should mark if a user is good next to it\'s username', function () {
+				var cmd = '.good';
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				var regexp = new RegExp('✓' + userName);
+				sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
+			});
+		});
 	});
 	describe('.nevermind', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
@@ -371,8 +573,9 @@ describe('pushbot', function () {
 	});
 	describe('.message', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
@@ -387,11 +590,28 @@ describe('pushbot', function () {
 
 			expect(roomSessions[0]).to.have.property('message', message);
 		});
+
+		describe('set topic', function () {
+			it('should add message to the topic', function () {
+				var message = 'This is a message ' + rand();
+				var cmd = '.message ' + message;
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledWithExactly(msg.topic, message + ' ' + userName);
+
+				msg.topic.restore();
+			});
+		});
 	});
 	describe('.at', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});
@@ -409,8 +629,9 @@ describe('pushbot', function () {
 	});
 	describe('.done', function () {
 		beforeEach(function () {
-			var msg = createMessage(robot, '.join', room, userName, userId);
-			callCommand(findCommand(robot, '.join'), msg);
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
 		});

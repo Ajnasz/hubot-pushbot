@@ -65,6 +65,9 @@ module.exports = function (robot) {
 
 	var userNameRegexp = '[\\w_-]+';
 
+	var goodUserMarker = '✓',
+		holdingUserMarker = '✗';
+
 	robot.brain.on('loaded', function () {
 		if (!robot.brain.data.pushbot) {
 			robot.brain.data.pushbot = {};
@@ -364,9 +367,9 @@ module.exports = function (robot) {
 	function getUserListStr(users) {
 		return users.map(function (user) {
 			if (user.isGood()) {
-				return '✓' + user.getName();
+				return goodUserMarker + user.getName();
 			} else if (user.isHolding()) {
-				return '✗' + user.getName();
+				return holdingUserMarker + user.getName();
 			} else {
 				return user.getName();
 			}
@@ -914,7 +917,9 @@ module.exports = function (robot) {
 			sess = Session(session);
 
 			if (sess.isAllUserGood()) {
-				msg.send(getUserListStr(getSortedSessionUsers(sess)) + ': Everyone is ready');
+				msg.send(getSortedSessionUsers(sess).map(function (user) {
+					return user.getName();
+				}).join(', ') + ': Everyone is ready');
 			}
 			setTopic(msg);
 		}
