@@ -198,7 +198,7 @@ module.exports = function (robot) {
 		getRoomSessionAtIndex: function (room, index) {
 			var rooms = this.getRoomSessions(room);
 
-			if (rooms.length > index) {
+			if (rooms && rooms.length > index) {
 				return rooms[index];
 			}
 
@@ -504,6 +504,10 @@ module.exports = function (robot) {
 
 	function findSessionIndexWithUser(room, userName) {
 		var roomSessions = Brain().getRoomSessions(room);
+
+		if (!roomSessions) {
+			return -1;
+		}
 
 		var index = findIndex(roomSessions, function (session) {
 			return findUserSessionIndex(session, userName) > -1;
