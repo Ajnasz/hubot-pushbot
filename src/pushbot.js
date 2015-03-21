@@ -956,7 +956,7 @@ module.exports = function (robot) {
 		var err = holdSession(room, userName, message);
 
 		if (err) {
-			msg.reply(err);
+			msg.reply(err.message);
 			robot.logger.error('.hold:', err);
 		} else {
 			setTopic(msg);
