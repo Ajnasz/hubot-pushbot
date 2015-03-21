@@ -253,7 +253,7 @@ describe('pushbot', function () {
 
 			expect(roomSessions[0].users).to.have.length(2);
 		});
-		it('set the second user to the new one', function () {
+		it('should set the second user to the new one', function () {
 			var cmd = '.join with ' + userName;
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
 
@@ -644,11 +644,23 @@ describe('pushbot', function () {
 		});
 	});
 	describe('.clearplease', function () {
+		var msg;
+		beforeEach(function () {
+			msg = createMessage(robot, '.clearplease', room, userName, userId);
+		});
+		afterEach(function () {
+			msg = null;
+		});
 		it('should remove all sessions from the room', function () {
-			var msg = createMessage(robot, '.clearplease', room, userName, userId);
+			var cmd = findCommand(robot, '.clearplease');
 
+			callCommand(cmd, msg);
+
+			expect(robot.brain.data.pushbot[room]).to.have.length(0);
+		});
+
+		it ('should reset channel title', function () {
 			sinon.spy(msg, 'topic');
-
 			var cmd = findCommand(robot, '.clearplease');
 
 			callCommand(cmd, msg);
