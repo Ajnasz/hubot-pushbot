@@ -938,7 +938,7 @@ module.exports = function (robot) {
 
 		if (err) {
 			if (err.name !== 'NotChangedError') {
-				msg.reply(err);
+				msg.reply(err.message);
 				robot.logger.error('.uhoh:', err);
 			}
 		} else {
