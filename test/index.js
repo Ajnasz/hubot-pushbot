@@ -725,6 +725,51 @@ describe('pushbot', function () {
 					sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
 					msg.reply.restore();
 				});
+				it('should not call send', function () {
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'send');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.notCalled(msg.send);
+					msg.send.restore();
+				});
+			});
+			describe('tries to set hold message', function () {
+				var cmd = '.hold foobar';
+				it('should not change the topic', function () {
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'topic');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.notCalled(msg.topic);
+					msg.topic.restore();
+				});
+
+				it('should not reply or send anything', function () {
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'reply');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.calledOnce(msg.reply);
+					sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+					msg.reply.restore();
+				});
+				it('should not call send', function () {
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'send');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.notCalled(msg.send);
+					msg.send.restore();
+				});
 			});
 		});
 	});
