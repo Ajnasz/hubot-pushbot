@@ -7,6 +7,7 @@ var sinon = require('sinon');
 var pushbot = require('../src/pushbot');
 
 function rand() {
+	'use strict';
 	return Math.round(Math.random() * 100);
 }
 
@@ -88,6 +89,7 @@ function findCommand(robot, message) {
 }
 
 function createMessage(robot, message, room, userName, userId) {
+	'use strict';
 
 	var item = findCommand(robot, message);
 
@@ -580,7 +582,7 @@ describe('pushbot', function () {
 		afterEach(function () {
 		});
 
-		it('should message property of the session', function () {
+		it('should set message property of the session', function () {
 			var message = 'This is a message ' + rand();
 			var cmd = '.message ' + message;
 			var msg = createMessage(robot, cmd, room, userName, userId);
@@ -604,6 +606,26 @@ describe('pushbot', function () {
 				sinon.assert.calledWithExactly(msg.topic, message + ' ' + userName);
 
 				msg.topic.restore();
+			});
+
+			describe('when the message is "-"', function () {
+
+				it('should remove the message from the topic', function () {
+					var message = 'This is a message ' + rand();
+					var cmd = '.message ' + message;
+					var msg = createMessage(robot, cmd, room, userName, userId);
+					callCommand(findCommand(robot, cmd), msg);
+
+					cmd = '.message -';
+
+					msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'topic');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.calledWithExactly(msg.topic, userName);
+				});
 			});
 		});
 	});
@@ -676,99 +698,285 @@ describe('pushbot', function () {
 
 	describe('use cases', function () {
 		describe('when the user isn\'t joined to session', function () {
-			describe('tries to set himeself as good', function () {
-				var cmd = '.good';
-				it('should not change the topic', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
-
-					sinon.spy(msg, 'topic');
-
+			describe('and there is one session', function () {
+				var newUserName = 'user-' + rand();
+				var newUserId = rand();
+				beforeEach(function () {
+					var cmd = '.join';
+					var msg = createMessage(robot, cmd, room, newUserName, newUserId);
 					callCommand(findCommand(robot, cmd), msg);
-
-					sinon.assert.notCalled(msg.topic);
-					msg.topic.restore();
 				});
+				afterEach(function () {
+				});
+				describe('tries to set himeself as good', function () {
+					var cmd = '.good';
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
 
-				it('should reply that the user is not in session', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
+						sinon.spy(msg, 'topic');
 
-					sinon.spy(msg, 'reply');
+						callCommand(findCommand(robot, cmd), msg);
 
-					callCommand(findCommand(robot, cmd), msg);
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
 
-					sinon.assert.calledOnce(msg.reply);
-					sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
-					msg.reply.restore();
+					it('should reply that the user is not in session', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'reply');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
+				});
+				describe('tries to set himeself as bad', function () {
+					var cmd = '.bad';
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'topic');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
+
+					it('should reply that the user is not in session', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'reply');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
+
+					it('should not call send', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'send');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.send);
+						msg.send.restore();
+					});
+				});
+				describe('tries to set hold message', function () {
+					var cmd = '.hold foobar';
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'topic');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
+
+					it('should not reply or send anything', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'reply');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
+
+					it('should not call send', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'send');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.send);
+						msg.send.restore();
+					});
+				});
+				describe('tries to send unhold', function () {
+					var cmd = '.unhold';
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'topic');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
+
+					it('should not reply or send anything', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'reply');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
+
+					it('should not call send', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'send');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.send);
+						msg.send.restore();
+					});
 				});
 			});
-			describe('tries to set himeself as bad', function () {
-				var cmd = '.bad';
-				it('should not change the topic', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
 
-					sinon.spy(msg, 'topic');
+			describe('and not even one session exists', function () {
+				describe('tries to set himeself as good', function () {
+					var cmd = '.good';
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
 
-					callCommand(findCommand(robot, cmd), msg);
+						sinon.spy(msg, 'topic');
 
-					sinon.assert.notCalled(msg.topic);
-					msg.topic.restore();
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
+
+					it('should reply that the user is not in session', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'reply');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
 				});
+				describe('tries to set himeself as bad', function () {
+					var cmd = '.bad';
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
 
-				it('should reply that the user is not in session', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
+						sinon.spy(msg, 'topic');
 
-					sinon.spy(msg, 'reply');
+						callCommand(findCommand(robot, cmd), msg);
 
-					callCommand(findCommand(robot, cmd), msg);
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
 
-					sinon.assert.calledOnce(msg.reply);
-					sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
-					msg.reply.restore();
+					it('should reply that the user is not in session', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'reply');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
+
+					it('should not call send', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'send');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.send);
+						msg.send.restore();
+					});
 				});
-				it('should not call send', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
+				describe('tries to set hold message', function () {
+					var cmd = '.hold foobar';
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
 
-					sinon.spy(msg, 'send');
+						sinon.spy(msg, 'topic');
 
-					callCommand(findCommand(robot, cmd), msg);
+						callCommand(findCommand(robot, cmd), msg);
 
-					sinon.assert.notCalled(msg.send);
-					msg.send.restore();
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
+
+					it('should not reply or send anything', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'reply');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
+
+					it('should not call send', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
+
+						sinon.spy(msg, 'send');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.send);
+						msg.send.restore();
+					});
 				});
-			});
-			describe('tries to set hold message', function () {
-				var cmd = '.hold foobar';
-				it('should not change the topic', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
+				describe('tries to send unhold', function () {
+					var cmd = '.unhold';
 
-					sinon.spy(msg, 'topic');
+					it('should not change the topic', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
 
-					callCommand(findCommand(robot, cmd), msg);
+						sinon.spy(msg, 'topic');
 
-					sinon.assert.notCalled(msg.topic);
-					msg.topic.restore();
-				});
+						callCommand(findCommand(robot, cmd), msg);
 
-				it('should not reply or send anything', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
+						sinon.assert.notCalled(msg.topic);
+						msg.topic.restore();
+					});
 
-					sinon.spy(msg, 'reply');
+					it('should not reply or send anything', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
 
-					callCommand(findCommand(robot, cmd), msg);
+						sinon.spy(msg, 'reply');
 
-					sinon.assert.calledOnce(msg.reply);
-					sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
-					msg.reply.restore();
-				});
-				it('should not call send', function () {
-					var msg = createMessage(robot, cmd, room, userName, userId);
+						callCommand(findCommand(robot, cmd), msg);
 
-					sinon.spy(msg, 'send');
+						sinon.assert.calledOnce(msg.reply);
+						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						msg.reply.restore();
+					});
 
-					callCommand(findCommand(robot, cmd), msg);
+					it('should not call send', function () {
+						var msg = createMessage(robot, cmd, room, userName, userId);
 
-					sinon.assert.notCalled(msg.send);
-					msg.send.restore();
+						sinon.spy(msg, 'send');
+
+						callCommand(findCommand(robot, cmd), msg);
+
+						sinon.assert.notCalled(msg.send);
+						msg.send.restore();
+					});
 				});
 			});
 		});

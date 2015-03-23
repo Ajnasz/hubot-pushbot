@@ -183,6 +183,12 @@ module.exports = function (robot) {
 			return this.getSessions()[room];
 		},
 
+		hasSessions: function (room) {
+			var roomSessions = this.getRoomSessions(room);
+
+			return roomSessions && roomSessions.length > 0;
+		},
+
 		setRoomSessions: function (room, sessions) {
 			this.getSessions()[room] = sessions;
 		},
@@ -503,11 +509,13 @@ module.exports = function (robot) {
 	}
 
 	function findSessionIndexWithUser(room, userName) {
-		var roomSessions = Brain().getRoomSessions(room);
+		var brain = Brain(), roomSessions;
 
-		if (!roomSessions) {
+		if (!brain.hasSessions(room)) {
 			return -1;
 		}
+
+		roomSessions = brain.getRoomSessions(room);
 
 		var index = findIndex(roomSessions, function (session) {
 			return findUserSessionIndex(session, userName) > -1;
@@ -972,7 +980,7 @@ module.exports = function (robot) {
 
 		if (err) {
 			if (err.name !== 'NotChangedError') {
-				msg.reply(err);
+				msg.reply(err.message);
 				robot.logger.error('.unhold:', err);
 			}
 		} else {
