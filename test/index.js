@@ -111,6 +111,22 @@ function callCommand(command, msg) {
 
 	command.cb(msg);
 }
+
+function getRoomSessions(robot, room) {
+	'use strict';
+	return robot.brain.data.pushbot[room].sessions;
+}
+
+function getFirstRoomSession(robot, room) {
+	'use strict';
+	return getRoomSessions(robot, room)[0];
+}
+
+function getSessionsFirstUser(session) {
+	'use strict';
+	return session.users[0];
+}
+
 describe('pushbot', function () {
 	'use strict';
 	var robot, room, bot, userName, userId;
@@ -154,7 +170,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = robot.brain.data.pushbot[room].sessions[0];
+			var session = getFirstRoomSession(robot, room);
 
 			expect(session).to.have.property('leader', msg.message.user.name);
 			expect(session).to.have.property('state', '');
@@ -170,15 +186,15 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = robot.brain.data.pushbot[room].sessions[0];
+			var session = getFirstRoomSession(robot, room);
 
 			expect(session.users).to.be.an('array');
 			expect(session.users).to.have.length(1);
-			expect(session.users[0]).to.be.an('object');
-			expect(session.users[0].name).to.deep.equal(msg.message.user.name);
+			expect(getSessionsFirstUser(session)).to.be.an('object');
+			expect(getSessionsFirstUser(session).name).to.deep.equal(msg.message.user.name);
 
 			// TODO We should be able to set this from configuration
-			expect(session.users[0].state).to.deep.equal('waiting');
+			expect(getSessionsFirstUser(session).state).to.deep.equal('waiting');
 		});
 
 		it('should create as many sessions, as many times called', function () {
@@ -189,7 +205,7 @@ describe('pushbot', function () {
 
 			msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
+			var roomSessions = getRoomSessions(robot, room);
 
 			expect(roomSessions).to.have.length(2);
 		});
@@ -258,18 +274,16 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
 
 			callCommand(findCommand(robot, cmd), msg);
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
 
-			expect(roomSessions[0].users).to.have.length(2);
+			expect(getFirstRoomSession(robot, room).users).to.have.length(2);
 		});
 		it('should set the second user to the new one', function () {
 			var cmd = '.join with ' + userName;
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
 
 			callCommand(findCommand(robot, cmd), msg);
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
 
-			expect(roomSessions[0].users[1]).to.have.property('name', newUserName);
+			expect(getFirstRoomSession(robot, room).users[1]).to.have.property('name', newUserName);
 		});
 
 		describe('set topic', function () {
@@ -339,7 +353,7 @@ describe('pushbot', function () {
 			var cmd = '.join before ' + userName;
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
 			callCommand(findCommand(robot, cmd), msg);
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
+			var roomSessions = getRoomSessions(robot, room);
 
 			expect(roomSessions).to.have.length(2);
 		});
@@ -348,9 +362,9 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
+			var roomSessions = getRoomSessions(robot, room);
 
-			expect(roomSessions[0]).to.have.property('leader', newUserName);
+			expect(getFirstRoomSession(robot, room)).to.have.property('leader', newUserName);
 			expect(roomSessions[1]).to.have.property('leader', userName);
 		});
 
@@ -359,7 +373,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = robot.brain.data.pushbot[room].sessions[0];
+			var session = getFirstRoomSession(robot, room);
 
 			expect(session).to.have.property('leader', msg.message.user.name);
 			expect(session).to.have.property('state', '');
@@ -371,11 +385,11 @@ describe('pushbot', function () {
 
 			expect(session.users).to.be.an('array');
 			expect(session.users).to.have.length(1);
-			expect(session.users[0]).to.be.an('object');
-			expect(session.users[0].name).to.deep.equal(msg.message.user.name);
+			expect(getSessionsFirstUser(session)).to.be.an('object');
+			expect(getSessionsFirstUser(session).name).to.deep.equal(msg.message.user.name);
 
 			// TODO We should be able to set this from configuration
-			expect(session.users[0].state).to.deep.equal('waiting');
+			expect(getSessionsFirstUser(session).state).to.deep.equal('waiting');
 		});
 
 		describe('set topic', function () {
@@ -411,7 +425,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var roomData = robot.brain.data.pushbot[room].sessions[0];
+			var roomData = getFirstRoomSession(robot, room);
 
 			expect(roomData).to.have.property('holded', true);
 		});
@@ -422,7 +436,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = robot.brain.data.pushbot[room].sessions[0];
+			var session = getFirstRoomSession(robot, room);
 
 			expect(session).to.have.property('holdMessage', holdMessage);
 		});
@@ -460,7 +474,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = robot.brain.data.pushbot[room].sessions[0];
+			var session = getFirstRoomSession(robot, room);
 
 			expect(session).to.have.property('holdMessage', holdMessage);
 
@@ -504,9 +518,9 @@ describe('pushbot', function () {
 			var cmd = '.uhoh';
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
-			var session = robot.brain.data.pushbot[room].sessions[0];
+			var session = getFirstRoomSession(robot, room);
 
-			expect(session.users[0]).to.have.property('state', 'uhoh');
+			expect(getSessionsFirstUser(session)).to.have.property('state', 'uhoh');
 		});
 	});
 	describe('.good', function () {
@@ -522,9 +536,9 @@ describe('pushbot', function () {
 			var cmd = '.good';
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
-			var session = robot.brain.data.pushbot[room].sessions[0];
+			var session = getFirstRoomSession(robot, room);
 
-			expect(session.users[0]).to.have.property('state', 'good');
+			expect(getSessionsFirstUser(session)).to.have.property('state', 'good');
 		});
 
 		it('should send with everyone is ready if every user is good', function () {
@@ -568,15 +582,13 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, testUserName, testUserId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
-
-			expect(roomSessions[0].users).to.have.length(2);
+			expect(getFirstRoomSession(robot, room).users).to.have.length(2);
 
 			cmd = '.nevermind';
 			msg = createMessage(robot, cmd, room, testUserName, testUserId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			expect(roomSessions[0].users).to.have.length(1);
+			expect(getFirstRoomSession(robot, room).users).to.have.length(1);
 
 		});
 	});
@@ -595,9 +607,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
-
-			expect(roomSessions[0]).to.have.property('message', message);
+			expect(getFirstRoomSession(robot, room)).to.have.property('message', message);
 		});
 
 		describe('set topic', function () {
@@ -651,9 +661,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
-
-			expect(roomSessions[0]).to.have.property('state', state);
+			expect(getFirstRoomSession(robot, room)).to.have.property('state', state);
 		});
 	});
 	describe('.done', function () {
@@ -669,7 +677,7 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
+			var roomSessions = getRoomSessions(robot, room);
 
 			expect(roomSessions).to.have.length(0);
 		});
@@ -686,7 +694,7 @@ describe('pushbot', function () {
 			var cmd = findCommand(robot, '.clearplease');
 
 			callCommand(cmd, msg);
-			var roomSessions = robot.brain.data.pushbot[room].sessions;
+			var roomSessions = getRoomSessions(robot, room);
 
 			expect(roomSessions).to.have.length(0);
 		});
