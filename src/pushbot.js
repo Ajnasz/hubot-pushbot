@@ -1,5 +1,5 @@
 // Description:
-//   Pushbot for pushbot
+//   Pushbot for hubot
 //
 // Commands:
 //   .join - Starts a pushbot session
