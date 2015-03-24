@@ -52,17 +52,6 @@ module.exports = function (robot) {
 		waiting: 'waiting'
 	};
 
-	var validStates = [
-		'commit',
-		'push',
-		'trunk',
-		'qa',
-		'dev',
-		'preprod',
-		'prod',
-		'production'
-	];
-
 	var userNameRegexp = '[\\w_-]+';
 
 	var goodUserMarker = '✓',
@@ -889,7 +878,7 @@ module.exports = function (robot) {
 	});
 
 	// at command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.at.join('|') + ') (' + validStates.join('|') + ')$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.at.join('|') + ') (\\w+)$'), function (msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 

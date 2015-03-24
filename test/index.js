@@ -104,6 +104,11 @@ function createMessage(robot, message, room, userName, userId) {
 
 function callCommand(command, msg) {
 	'use strict';
+
+	if (typeof command === 'undefined') {
+		throw new Error('Command not found');
+	}
+
 	command.cb(msg);
 }
 describe('pushbot', function () {
