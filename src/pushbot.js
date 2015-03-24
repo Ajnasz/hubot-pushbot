@@ -123,9 +123,9 @@ module.exports = function (robot) {
 	}
 	NotChangedError.prototype = Error.prototype;
 
-	function SessionHoldedError() {
-		this.name = 'SessionHoldedError';
-		this.message = 'Session holded';
+	function RoomHoldedError() {
+		this.name = 'RoomHoldedError';
+		this.message = 'Room holded';
 	}
 	LeaderCanNotLeaveError.prototype = Error.prototype;
 
@@ -292,10 +292,6 @@ module.exports = function (robot) {
 			return this.message;
 		},
 
-		isHolded: function () {
-			return this.holded;
-		},
-
 		getHoldMessage: function () {
 			return this.holdMessage;
 		},
@@ -411,10 +407,6 @@ module.exports = function (robot) {
 	function getStateStrForSession(session) {
 		var sess = Session(session);
 		var msg = [];
-
-		if (sess.isHolded()) {
-			msg.push('HOLD: ☂ ' + sess.getHoldMessage() + ' ☂');
-		}
 
 		if (sess.getMessage() && sess.getMessage() !== emptyMessage) {
 			msg.push(sess.getMessage());
@@ -646,16 +638,18 @@ module.exports = function (robot) {
 
 		var holdingUsers;
 
+		var brain = Brain();
+
+		if (Room(brain.getRoom(room)).isHolded()) {
+			return new RoomHoldedError();
+		}
+
 		index = findSessionIndexWithUser(room, userName);
 
 		if (index > -1) {
 			session = Brain().getRoomSessionAtIndex(room, index);
 
 			sess = Session(session);
-
-			if (sess.isHolded()) {
-				return new SessionHoldedError();
-			}
 
 			if (sess.getState() && !sess.isAllUserGood()) {
 				holdingUsers = sess.getUsers().map(User).filter(function (user) {
@@ -680,18 +674,19 @@ module.exports = function (robot) {
 	function setRoomState(room, userName, state) {
 		var session, sess, brain;
 
+		brain = Brain();
+
+		if (Room(brain.getRoom(room)).isHolded()) {
+			return new RoomHoldedError();
+		}
+
 		var index = findSessionIndexWithUser(room, userName);
 
 		robot.logger.debug('set room state call', index, room, userName, state);
 
 		if (index !== -1) {
-			brain = Brain();
 			session = brain.getRoomSessionAtIndex(room, index);
 			sess = Session(session);
-
-			if (sess.isHolded()) {
-				return new SessionHoldedError();
-			}
 
 			/*
 			if (!sess.isUserLeader(userName)) {
@@ -1021,17 +1016,14 @@ module.exports = function (robot) {
 	// .sessions command
 	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.sessions.join('|') + ')$'), function (msg) {
 		var room = msg.message.room;
+		var brain = Brain();
 
-		var roomSessions = Brain().getRoomSessions(room);
+		var roomSessions = brain.getRoomSessions(room);
 
 		if (roomSessions.length) {
 			msg.send(roomSessions.map(function (session) {
 				var msg = [];
 				var sess = Session(session);
-
-				if (sess.isHolded()) {
-					msg.push('HOLD: ☂ ' + sess.getHoldMessage() + ' ☂');
-				}
 
 				if (sess.getState()) {
 					msg.push('<' + sess.getState() + '>');

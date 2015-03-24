@@ -1003,6 +1003,104 @@ describe('pushbot', function () {
 					});
 				});
 			});
+
+		});
+		describe('when hold is set', function () {
+			beforeEach(function () {
+				var cmd, msg;
+				cmd = '.join';
+				msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+
+				cmd = '.hold foobar';
+				msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+			});
+			afterEach(function () {
+			});
+			describe('user tries to change session state', function () {
+				var cmd, msg;
+				beforeEach(function () {
+					cmd = '.at prod';
+					msg = createMessage(robot, cmd, room, userName, userId);
+				});
+				afterEach(function () {
+					cmd = null;
+					msg = null;
+				});
+				it('should not allow to change session state', function () {
+					callCommand(findCommand(robot, cmd), msg);
+
+					var session = getFirstRoomSession(robot, room);
+
+					expect(session).to.have.property('state', '');
+				});
+				it('should reply, that the room is in hold', function () {
+					sinon.spy(msg, 'reply');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.calledOnce(msg.reply);
+					sinon.assert.calledWithExactly(msg.reply, 'Room holded');
+
+					msg.reply.restore();
+				});
+				it('should not change the topic', function () {
+					sinon.spy(msg, 'topic');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.notCalled(msg.topic);
+
+					msg.topic.restore();
+				});
+			});
+			describe('user tries to mark session done', function () {
+				var cmd, msg;
+				beforeEach(function () {
+					cmd = '.done';
+					msg = createMessage(robot, cmd, room, userName, userId);
+				});
+				afterEach(function () {
+					cmd = null;
+					msg = null;
+				});
+				it('should not allow to remove session', function () {
+					var cmd = '.done';
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					var roomSessions = getRoomSessions(robot, room);
+
+					expect(roomSessions).to.have.length(1);
+				});
+				it('should reply, that the room is in hold', function () {
+					var cmd = '.done';
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'reply');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.calledOnce(msg.reply);
+					sinon.assert.calledWithExactly(msg.reply, 'Room holded');
+
+					msg.reply.restore();
+				});
+				it('should not change the topic', function () {
+					var cmd = '.done';
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'topic');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.notCalled(msg.topic);
+
+					msg.topic.restore();
+				});
+			});
 		});
 	});
 });
