@@ -112,9 +112,14 @@ function callCommand(command, msg) {
 	command.cb(msg);
 }
 
+function getRoom(robot, room) {
+	'use strict';
+	return robot.brain.data.pushbot[room];
+}
+
 function getRoomSessions(robot, room) {
 	'use strict';
-	return robot.brain.data.pushbot[room].sessions;
+	return getRoom(robot, room).sessions;
 }
 
 function getFirstRoomSession(robot, room) {
@@ -425,20 +430,20 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var roomData = getFirstRoomSession(robot, room);
+			var roomData = getRoom(robot, room);
 
 			expect(roomData).to.have.property('holded', true);
 		});
 
-		it('should set session holdMessage property to given message', function () {
+		it('should set room holdMessage property to given message', function () {
 			var holdMessage = 'hold message - ' + rand();
 			var cmd = '.hold ' + holdMessage;
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = getFirstRoomSession(robot, room);
+			var roomData = getRoom(robot, room);
 
-			expect(session).to.have.property('holdMessage', holdMessage);
+			expect(roomData).to.have.property('holdMessage', holdMessage);
 		});
 
 		describe('set title', function () {
@@ -474,16 +479,16 @@ describe('pushbot', function () {
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = getFirstRoomSession(robot, room);
+			var roomData = getRoom(robot, room);
 
-			expect(session).to.have.property('holdMessage', holdMessage);
+			expect(roomData).to.have.property('holdMessage', holdMessage);
 
 			cmd = '.unhold';
 			msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
 
-			expect(session).to.have.property('holded', false);
-			expect(session).to.have.property('holdMessage', '');
+			expect(roomData).to.have.property('holded', false);
+			expect(roomData).to.have.property('holdMessage', '');
 		});
 
 		describe('set topic', function () {
@@ -788,15 +793,18 @@ describe('pushbot', function () {
 					});
 				});
 				describe('tries to set hold message', function () {
-					var cmd = '.hold foobar';
-					it('should not change the topic', function () {
+					var holdMessage = 'foobar';
+					var cmd = '.hold ' + holdMessage;
+					it('should change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'topic');
 
 						callCommand(findCommand(robot, cmd), msg);
 
-						sinon.assert.notCalled(msg.topic);
+						sinon.assert.calledOnce(msg.topic);
+						var regexp = new RegExp('^HOLD: . ' + holdMessage);
+						sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
 						msg.topic.restore();
 					});
 
@@ -804,12 +812,15 @@ describe('pushbot', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'reply');
+						sinon.spy(msg, 'send');
 
 						callCommand(findCommand(robot, cmd), msg);
 
-						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						sinon.assert.notCalled(msg.reply);
+						sinon.assert.notCalled(msg.send);
+
 						msg.reply.restore();
+						msg.send.restore();
 					});
 
 					it('should not call send', function () {
@@ -825,7 +836,7 @@ describe('pushbot', function () {
 				});
 				describe('tries to send unhold', function () {
 					var cmd = '.unhold';
-					it('should not change the topic', function () {
+					it('should change back the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'topic');
@@ -840,22 +851,14 @@ describe('pushbot', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'reply');
-
-						callCommand(findCommand(robot, cmd), msg);
-
-						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
-						msg.reply.restore();
-					});
-
-					it('should not call send', function () {
-						var msg = createMessage(robot, cmd, room, userName, userId);
-
 						sinon.spy(msg, 'send');
 
 						callCommand(findCommand(robot, cmd), msg);
 
+						sinon.assert.notCalled(msg.reply);
 						sinon.assert.notCalled(msg.send);
+
+						msg.reply.restore();
 						msg.send.restore();
 					});
 				});
@@ -924,15 +927,19 @@ describe('pushbot', function () {
 					});
 				});
 				describe('tries to set hold message', function () {
-					var cmd = '.hold foobar';
-					it('should not change the topic', function () {
+					var holdMessage = 'foobar';
+					var cmd = '.hold ' + holdMessage;
+
+					it('should change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'topic');
 
 						callCommand(findCommand(robot, cmd), msg);
 
-						sinon.assert.notCalled(msg.topic);
+						sinon.assert.calledOnce(msg.topic);
+						var regexp = new RegExp('^HOLD: . ' + holdMessage);
+						sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
 						msg.topic.restore();
 					});
 
@@ -940,12 +947,15 @@ describe('pushbot', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'reply');
+						sinon.spy(msg, 'send');
 
 						callCommand(findCommand(robot, cmd), msg);
 
-						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						sinon.assert.notCalled(msg.reply);
+						sinon.assert.notCalled(msg.send);
+
 						msg.reply.restore();
+						msg.send.restore();
 					});
 
 					it('should not call send', function () {
@@ -959,6 +969,10 @@ describe('pushbot', function () {
 						msg.send.restore();
 					});
 				});
+
+
+				// --------------------------------
+
 				describe('tries to send unhold', function () {
 					var cmd = '.unhold';
 
@@ -977,22 +991,14 @@ describe('pushbot', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'reply');
-
-						callCommand(findCommand(robot, cmd), msg);
-
-						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
-						msg.reply.restore();
-					});
-
-					it('should not call send', function () {
-						var msg = createMessage(robot, cmd, room, userName, userId);
-
 						sinon.spy(msg, 'send');
 
 						callCommand(findCommand(robot, cmd), msg);
 
+						sinon.assert.notCalled(msg.reply);
 						sinon.assert.notCalled(msg.send);
+
+						msg.reply.restore();
 						msg.send.restore();
 					});
 				});

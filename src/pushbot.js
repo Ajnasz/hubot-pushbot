@@ -164,12 +164,16 @@ module.exports = function (robot) {
 	}
 
 	var brainProto = {
-		getSessions: function () {
+		getRooms: function () {
 			return this.data;
 		},
 
+		getRoom: function (room) {
+			return this.getRooms()[room];
+		},
+
 		getRoomSessions: function (room) {
-			var roomData = this.getSessions()[room];
+			var roomData = this.getRoom(room);
 			return roomData && roomData.sessions;
 		},
 
@@ -180,19 +184,19 @@ module.exports = function (robot) {
 		},
 
 		setRoomData: function (room) {
-			this.getSessions()[room] = {
+			this.getRooms()[room] = {
 				holded: false,
 				sessions: []
 			};
 		},
 
 		setRoomSessions: function (room, sessions) {
-			var roomData = this.getSessions()[room];
+			var roomData = this.getRoom(room);
 
 			if (!roomData) {
 				this.setRoomData(room);
 			}
-			this.getSessions()[room].sessions = sessions;
+			this.getRoom(room).sessions = sessions;
 		},
 
 		clearRoomSessions: function (room) {
@@ -200,7 +204,7 @@ module.exports = function (robot) {
 		},
 
 		setRoomSessionAtIndex: function (room, index, session) {
-			this.getSessions()[room].sessions[index] = session;
+			this.getRoomSessions(room)[index] = session;
 		},
 
 		getRoomSessionAtIndex: function (room, index) {
@@ -223,6 +227,44 @@ module.exports = function (robot) {
 		}
 
 		output.data = robot.brain.data.pushbot;
+
+		return output;
+	}
+
+	var roomProto = {
+		isHolded: function () {
+			return this.holded;
+		},
+
+		hold: function () {
+			this.holded = true;
+			this.__ref.holded = true;
+		},
+
+		unhold: function () {
+			this.holded = false;
+			this.__ref.holded = false;
+		},
+
+		setHoldMessage: function (message) {
+			robot.logger.debug('set hold message', message);
+			this.holdMessage = message;
+			this.__ref.holdMessage = message;
+		},
+
+		getHoldMessage: function () {
+			return this.holdMessage;
+		},
+	};
+
+	function Room(room) {
+		var output = Object.create(roomProto);
+
+		output.sessions = room.sessions;
+		output.holdMessage = room.holdMessage;
+		output.holded = room.holded;
+
+		output.__ref = room;
 
 		return output;
 	}
@@ -256,22 +298,6 @@ module.exports = function (robot) {
 
 		getHoldMessage: function () {
 			return this.holdMessage;
-		},
-
-		setHoldMessage: function (message) {
-			robot.logger.debug('set hold message', message);
-			this.holdMessage = message;
-			this.__ref.holdMessage = message;
-		},
-
-		hold: function () {
-			this.holded = true;
-			this.__ref.holded = true;
-		},
-
-		unhold: function () {
-			this.holded = false;
-			this.__ref.holded = false;
 		},
 
 		setState: function (state) {
@@ -346,8 +372,6 @@ module.exports = function (robot) {
 		output.state = session.state;
 		output.message = session.message;
 		output.users = session.users;
-		output.holded = session.holded;
-		output.holdMessage = session.holdMessage;
 
 		output.__ref = session;
 
@@ -697,50 +721,56 @@ module.exports = function (robot) {
 		}
 	}
 
-	function unholdSession(room, userName) {
-		var sess, brain;
-
-		var index = findSessionIndexWithUser(room, userName);
-
-		if (index !== -1) {
-			brain = Brain();
-			sess = Session(brain.getRoomSessionAtIndex(room, index));
-
-			if (!sess.isHolded()) {
-				return new NotChangedError();
-			}
-
-			sess.unhold();
-			sess.setHoldMessage('');
-
-			return null;
-		} else {
-			return new NotInSessionError();
+	function unholdRoom(room) {
+		var brain = Brain();
+		var existingRoom = brain.getRoom(room);
+		var roomObj;
+		if (!existingRoom) {
+			createRoom(room);
+			existingRoom = brain.getRoom(room);
 		}
+
+		roomObj = Room(existingRoom);
+
+		if (!roomObj.isHolded()) {
+			return new NotChangedError();
+		}
+
+		roomObj.unhold();
+		roomObj.setHoldMessage('');
+
+		return null;
 	}
 
-	function holdSession(room, userName, message) {
-		var sess, brain;
-
-		var index = findSessionIndexWithUser(room, userName);
-
-		if (index !== -1) {
-			brain = Brain();
-			sess = Session(brain.getRoomSessionAtIndex(room, index));
-
-			sess.hold();
-			sess.setHoldMessage(message);
-
-			return null;
-		} else {
-			return new NotInSessionError();
+	function holdRoom(room, message) {
+		var brain = Brain();
+		var existingRoom = brain.getRoom(room);
+		var roomObj;
+		if (!existingRoom) {
+			createRoom(room);
+			existingRoom = brain.getRoom(room);
 		}
+
+		roomObj = Room(existingRoom);
+
+		roomObj.hold();
+		roomObj.setHoldMessage(message);
+
+		return null;
 	}
 
 	function getTopicString(room) {
+		var brain = Brain();
+		var roomObj = Room(brain.getRoom(room));
 		var roomSessions = Brain().getRoomSessions(room);
 
-		var topic = roomSessions.map(getStateStrForSession);
+		var topic = [];
+
+		if (roomObj.isHolded()) {
+			topic.push('HOLD: ☂ ' + roomObj.getHoldMessage() + ' ☂');
+		}
+
+		topic = topic.concat(roomSessions.map(getStateStrForSession));
 
 		return topic.join(' | ');
 	}
@@ -960,10 +990,9 @@ module.exports = function (robot) {
 	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.hold.join('|') + ') ' + messageRegexp + '$'), function (msg) {
 		robot.logger.debug('COMMANBD HOLD');
 		var room = msg.message.room;
-		var userName = msg.message.user.name;
 		var message = msg.match[1];
 
-		var err = holdSession(room, userName, message);
+		var err = holdRoom(room, message);
 
 		if (err) {
 			msg.reply(err.message);
@@ -976,9 +1005,8 @@ module.exports = function (robot) {
 	// .unhold command
 	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.unhold.join('|') + ')$'), function (msg) {
 		var room = msg.message.room;
-		var userName = msg.message.user.name;
 
-		var err = unholdSession(room, userName);
+		var err = unholdRoom(room);
 
 		if (err) {
 			if (err.name !== 'NotChangedError') {
