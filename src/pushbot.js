@@ -169,7 +169,8 @@ module.exports = function (robot) {
 		},
 
 		getRoomSessions: function (room) {
-			return this.getSessions()[room];
+			var roomData = this.getSessions()[room];
+			return roomData && roomData.sessions;
 		},
 
 		hasSessions: function (room) {
@@ -178,16 +179,28 @@ module.exports = function (robot) {
 			return roomSessions && roomSessions.length > 0;
 		},
 
+		setRoomData: function (room) {
+			this.getSessions()[room] = {
+				holded: false,
+				sessions: []
+			};
+		},
+
 		setRoomSessions: function (room, sessions) {
-			this.getSessions()[room] = sessions;
+			var roomData = this.getSessions()[room];
+
+			if (!roomData) {
+				this.setRoomData(room);
+			}
+			this.getSessions()[room].sessions = sessions;
 		},
 
 		clearRoomSessions: function (room) {
-			this.getSessions()[room] = [];
+			this.setRoomData(room);
 		},
 
 		setRoomSessionAtIndex: function (room, index, session) {
-			this.getSessions()[room][index] = session;
+			this.getSessions()[room].sessions[index] = session;
 		},
 
 		getRoomSessionAtIndex: function (room, index) {
