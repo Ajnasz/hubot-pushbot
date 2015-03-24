@@ -9,9 +9,12 @@
   },
   "keywords": [
     "hubot",
+    "hubot-scripts",
     "pushbot",
     "irc",
-    "slack"
+    "slack",
+    "hipchat",
+    "campfire"
   ],
   "author": {
     "name": "Lajos Koszti"
