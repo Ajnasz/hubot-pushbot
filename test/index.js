@@ -132,6 +132,11 @@ function getSessionsFirstUser(session) {
 	return session.users[0];
 }
 
+function getFirstSessionsFirstUser(robot, room) {
+	'use strict';
+	return getSessionsFirstUser(getFirstRoomSession(robot, room));
+}
+
 describe('pushbot', function () {
 	'use strict';
 	var robot, room, bot, userName, userId;
@@ -195,11 +200,13 @@ describe('pushbot', function () {
 
 			expect(session.users).to.be.an('array');
 			expect(session.users).to.have.length(1);
-			expect(getSessionsFirstUser(session)).to.be.an('object');
-			expect(getSessionsFirstUser(session).name).to.deep.equal(msg.message.user.name);
+
+			var firstUser = getSessionsFirstUser(session);
+			expect(firstUser).to.be.an('object');
+			expect(firstUser.name).to.deep.equal(msg.message.user.name);
 
 			// TODO We should be able to set this from configuration
-			expect(getSessionsFirstUser(session).state).to.deep.equal('waiting');
+			expect(firstUser.state).to.deep.equal('waiting');
 		});
 
 		it('should create as many sessions, as many times called', function () {
@@ -390,11 +397,14 @@ describe('pushbot', function () {
 
 			expect(session.users).to.be.an('array');
 			expect(session.users).to.have.length(1);
-			expect(getSessionsFirstUser(session)).to.be.an('object');
-			expect(getSessionsFirstUser(session).name).to.deep.equal(msg.message.user.name);
+
+			var firstUser = getSessionsFirstUser(session);
+
+			expect(firstUser).to.be.an('object');
+			expect(firstUser.name).to.deep.equal(msg.message.user.name);
 
 			// TODO We should be able to set this from configuration
-			expect(getSessionsFirstUser(session).state).to.deep.equal('waiting');
+			expect(firstUser.state).to.deep.equal('waiting');
 		});
 
 		describe('set topic', function () {
@@ -523,9 +533,7 @@ describe('pushbot', function () {
 			var cmd = '.uhoh';
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
-			var session = getFirstRoomSession(robot, room);
-
-			expect(getSessionsFirstUser(session)).to.have.property('state', 'uhoh');
+			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', 'uhoh');
 		});
 	});
 	describe('.good', function () {
@@ -543,7 +551,7 @@ describe('pushbot', function () {
 			callCommand(findCommand(robot, cmd), msg);
 			var session = getFirstRoomSession(robot, room);
 
-			expect(getSessionsFirstUser(session)).to.have.property('state', 'good');
+			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', 'good');
 		});
 
 		it('should send with everyone is ready if every user is good', function () {
@@ -716,7 +724,111 @@ describe('pushbot', function () {
 			msg.topic.restore();
 		});
 	});
-	describe.skip('.kick', function () {});
+	describe('.kick', function () {
+		var newUserName = 'user-' + rand();
+		var newUserId = rand();
+		beforeEach(function () {
+			var cmd, msg;
+			cmd = '.join';
+			msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			cmd = '.join with ' + userName;
+			msg = createMessage(robot, cmd, room, newUserName, newUserId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			var session = getFirstRoomSession(robot, room);
+			expect(session.users).to.have.length(2);
+		});
+		afterEach(function () {
+		});
+
+		it('should remove user from the queue', function () {
+			var cmd = '.kick ' + newUserName;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			var session = getFirstRoomSession(robot, room);
+
+			expect(session.users).to.have.length(1);
+		});
+
+		it('should remove user from the topic', function () {
+			var cmd = '.kick ' + newUserName;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+
+			sinon.spy(msg, 'topic');
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			sinon.assert.calledOnce(msg.topic);
+			sinon.assert.calledWithExactly(msg.topic, userName);
+		});
+
+		describe('user in good state', function () {
+			beforeEach(function () {
+				var cmd, msg;
+				cmd = '.good';
+				msg = createMessage(robot, cmd, room, newUserName, newUserId);
+				callCommand(findCommand(robot, cmd), msg);
+			});
+			afterEach(function () {
+			});
+			it('should remove user from the queue', function () {
+				var cmd = '.kick ' + newUserName;
+				var msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+
+				var session = getFirstRoomSession(robot, room);
+
+				expect(session.users).to.have.length(1);
+			});
+
+			it('should remove user from the topic', function () {
+				var cmd = '.kick ' + newUserName;
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName);
+			});
+		});
+
+		describe('user in bad state', function () {
+			beforeEach(function () {
+				var cmd, msg;
+				cmd = '.bad';
+				msg = createMessage(robot, cmd, room, newUserName, newUserId);
+				callCommand(findCommand(robot, cmd), msg);
+			});
+			afterEach(function () {
+			});
+			it('should remove user from the queue', function () {
+				var session = getFirstRoomSession(robot, room);
+
+				var cmd = '.kick ' + newUserName;
+				var msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+
+				expect(session.users).to.have.length(1);
+			});
+
+			it('should remove user from the topic', function () {
+				var cmd = '.kick ' + newUserName;
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.topic);
+				sinon.assert.calledWithExactly(msg.topic, userName);
+			});
+		});
+	});
 	describe.skip('.sessions', function () {});
 
 	describe('use cases', function () {

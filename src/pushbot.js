@@ -1041,7 +1041,7 @@ module.exports = function (robot) {
 	});
 
 	// .kick command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.kick.join('|') + ') ([\\w#]+)$'), function (msg) {
+	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.kick.join('|') + ') (' + userNameRegexp + ')$'), function (msg) {
 		var room = msg.message.room;
 
 		var user = msg.message.user.name;
