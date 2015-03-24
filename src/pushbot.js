@@ -62,7 +62,9 @@ module.exports = function (robot) {
 
 	var bot = '.';
 
-	var messageRegexp = '([\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+)';
+	var messageRegexp = '[\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+';
+
+	var userNameRegexp = '[\\w_-]+';
 
 	var defaultMessage = '-';
 
@@ -74,7 +76,7 @@ module.exports = function (robot) {
 		waiting: 'waiting'
 	};
 
-	var userNameRegexp = '[\\w_-]+';
+	var stateNameRegexp = userNameRegexp;
 
 	var goodUserMarker = '✓',
 		holdingUserMarker = '✗';
@@ -85,7 +87,7 @@ module.exports = function (robot) {
 		}
 	});
 
-
+	// ERRORS
 	function NotInSessionError() {
 		this.name = 'NotInSessionError';
 		this.message = 'User not found in session';
@@ -150,86 +152,92 @@ module.exports = function (robot) {
 		this.message = 'Room holded';
 	}
 	LeaderCanNotLeaveError.prototype = Error.prototype;
+	// ERRORS END
 
-	var userProto = Object.create(null);
+	// TYPES
+	var User = (function () {
+		var userProto = Object.create(null);
 
-	userProto.getName = function () {
-		return this.name;
-	};
+		userProto.getName = function () {
+			return this.name;
+		};
 
-	userProto.getState = function () {
-		return this.state;
-	};
+		userProto.getState = function () {
+			return this.state;
+		};
 
-	userProto.setState = function (state) {
-		this.__ref.state = state;
-		this.state = state;
-	};
+		userProto.setState = function (state) {
+			this.__ref.state = state;
+			this.state = state;
+		};
 
-	userProto.isGood = function () {
-		return this.getState() === userStates.good;
-	};
+		userProto.isGood = function () {
+			return this.getState() === userStates.good;
+		};
 
-	userProto.isHolding = function () {
-		return this.getState() === userStates.uhoh;
-	};
+		userProto.isHolding = function () {
+			return this.getState() === userStates.uhoh;
+		};
 
-	function User(user) {
-		var output = Object.create(userProto);
+		return function User(user) {
+			var output = Object.create(userProto);
 
-		output.name = user.name;
-		output.state = user.state;
+			output.name = user.name;
+			output.state = user.state;
 
-		output.__ref = user;
+			output.__ref = user;
 
-		return output;
-	}
+			return output;
+		};
+	}());
 
-	var brainProto = {
-		getRooms: function () {
+	var Brain = (function () {
+		var brainProto = Object.create(null);
+
+		brainProto.getRooms = function () {
 			return this.data;
-		},
+		};
 
-		getRoom: function (room) {
+		brainProto.getRoom = function (room) {
 			return this.getRooms()[room];
-		},
+		};
 
-		getRoomSessions: function (room) {
+		brainProto.getRoomSessions = function (room) {
 			var roomData = this.getRoom(room);
 			return roomData && roomData.sessions;
-		},
+		};
 
-		hasSessions: function (room) {
+		brainProto.hasSessions = function (room) {
 			var roomSessions = this.getRoomSessions(room);
 
 			return roomSessions && roomSessions.length > 0;
-		},
+		};
 
-		setRoomData: function (room) {
+		brainProto.setRoomData = function (room) {
 			this.getRooms()[room] = {
 				holded: false,
 				sessions: []
 			};
-		},
+		};
 
-		setRoomSessions: function (room, sessions) {
+		brainProto.setRoomSessions = function (room, sessions) {
 			var roomData = this.getRoom(room);
 
 			if (!roomData) {
 				this.setRoomData(room);
 			}
 			this.getRoom(room).sessions = sessions;
-		},
+		};
 
-		clearRoomSessions: function (room) {
+		brainProto.clearRoomSessions = function (room) {
 			this.setRoomData(room);
-		},
+		};
 
-		setRoomSessionAtIndex: function (room, index, session) {
+		brainProto.setRoomSessionAtIndex = function (room, index, session) {
 			this.getRoomSessions(room)[index] = session;
-		},
+		};
 
-		getRoomSessionAtIndex: function (room, index) {
+		brainProto.getRoomSessionAtIndex = function (room, index) {
 			var rooms = this.getRoomSessions(room);
 
 			if (rooms && rooms.length > index) {
@@ -237,165 +245,168 @@ module.exports = function (robot) {
 			}
 
 			return null;
-		}
+		};
 
-	};
+		return function Brain() {
+			var output = Object.create(brainProto);
 
-	function Brain() {
-		var output = Object.create(brainProto);
+			if (!robot.brain.data.pushbot) {
+				robot.brain.data.pushbot = Object.create(null);
+			}
 
-		if (!robot.brain.data.pushbot) {
-			robot.brain.data.pushbot = Object.create(null);
-		}
+			output.data = robot.brain.data.pushbot;
 
-		output.data = robot.brain.data.pushbot;
+			return output;
+		};
+	}());
 
-		return output;
-	}
+	var Room = (function () {
+		var roomProto = Object.create(null);
 
-	var roomProto = {
-		isHolded: function () {
+		roomProto.isHolded = function () {
 			return this.holded;
-		},
+		};
 
-		hold: function () {
+		roomProto.hold = function () {
 			this.holded = true;
 			this.__ref.holded = true;
-		},
+		};
 
-		unhold: function () {
+		roomProto.unhold = function () {
 			this.holded = false;
 			this.__ref.holded = false;
-		},
+		};
 
-		setHoldMessage: function (message) {
+		roomProto.setHoldMessage = function (message) {
 			robot.logger.debug('set hold message', message);
 			this.holdMessage = message;
 			this.__ref.holdMessage = message;
-		},
+		};
 
-		getHoldMessage: function () {
+		roomProto.getHoldMessage = function () {
 			return this.holdMessage;
-		},
-	};
+		};
 
-	function Room(room) {
-		var output = Object.create(roomProto);
+		return function Room(room) {
+			var output = Object.create(roomProto);
 
-		output.sessions = room.sessions;
-		output.holdMessage = room.holdMessage;
-		output.holded = room.holded;
+			output.sessions = room.sessions;
+			output.holdMessage = room.holdMessage;
+			output.holded = room.holded;
 
-		output.__ref = room;
+			output.__ref = room;
 
-		return output;
-	}
+			return output;
+		};
+	}());
 
-	var sessionProto = {
+	var Session = (function () {
+		var sessionProto = Object.create(null);
 		/**
 		 * @return String
 		 */
-		getLeader: function () {
+		sessionProto.getLeader = function () {
 			return this.leader;
-		},
+		};
 
-		getUsers: function () {
+		sessionProto.getUsers = function () {
 			return this.users;
-		},
+		};
 
-		getState: function () {
+		sessionProto.getState = function () {
 			return this.state;
-		},
+		};
 
 		/**
 		 * @return String
 		 */
-		getMessage: function () {
+		sessionProto.getMessage = function () {
 			return this.message;
-		},
+		};
 
-		getHoldMessage: function () {
+		sessionProto.getHoldMessage = function () {
 			return this.holdMessage;
-		},
+		};
 
-		setState: function (state) {
+		sessionProto.setState = function (state) {
 			this.state = state;
 			this.__ref.state = state;
-		},
+		};
 
 		/**
 		 * @param {String} message
 		 */
-		setMessage: function (message) {
+		sessionProto.setMessage = function (message) {
 			this.message = message;
 			this.__ref.message = message;
-		},
+		};
 
 		/**
 		 * @param {String} leaderName
 		 */
-		setLeader: function (leaderName) {
+		sessionProto.setLeader = function (leaderName) {
 			this.leader = leaderName;
 			this.__ref.leader = leaderName;
-		},
+		};
 
 		/**
 		 * @param {String} userName
 		 */
-		addUser: function (userName) {
+		sessionProto.addUser = function (userName) {
 			this.getUsers().push({
 				name: userName,
 				state: userStates.waiting
 			});
-		},
+		};
 
 		/**
 		 * @return Boolean
 		 */
-		isLeaderJoined: function () {
+		sessionProto.isLeaderJoined = function () {
 			return this.getUsers().some(function (user) {
 				this.isUserLeader(User(user).getName());
 			}.bind(this));
-		},
+		};
 
 		/**
 		 * @param {String} userName
 		 * @return Boolean
 		 */
-		isUserLeader: function (userName) {
+		sessionProto.isUserLeader = function (userName) {
 			return this.getLeader() === userName;
-		},
+		};
 
 		/**
 		 * @return Boolean
 		 */
-		isAllUserGood: function () {
+		sessionProto.isAllUserGood = function () {
 			return this.getUsers().map(User).every(function (u) {
 				return u.isGood();
 			});
-		},
+		};
 
-		resetUsers: function () {
+		sessionProto.resetUsers = function () {
 			this.getUsers().map(User).forEach(function (user) {
 				user.setState(userStates.waiting);
 			});
-		},
+		};
 
-	};
+		return function Session(session) {
+			var output = Object.create(sessionProto);
 
-	function Session(session) {
-		var output = Object.create(sessionProto);
+			output.leader = session.leader;
+			output.state = session.state;
+			output.message = session.message;
+			output.users = session.users;
 
-		output.leader = session.leader;
-		output.state = session.state;
-		output.message = session.message;
-		output.users = session.users;
+			output.__ref = session;
 
-		output.__ref = session;
+			return output;
+		};
+	}());
+	// TYPES END
 
-		return output;
-	}
-
+	// HELPERS
 	function getSortedSessionUsers(sess) {
 		// var sess = Session(session);
 		var users = sess.getUsers().map(User);
@@ -465,18 +476,16 @@ module.exports = function (robot) {
 		};
 	}
 
-	/*
-	function isUserParticipating(room, userName) {
-		var roomSessions = Brain().getRoomSessions(room);
+	function setTopic(msg) {
+		var topic = getTopicString(msg.message.room);
 
-		return roomSessions.some(function (session) {
-			return  Session(session).getUsers().some(function (sessionUser) {
-				return User(sessionUser).getName() === userName;
-			});
-		});
+		robot.logger.debug('Set topic:', topic, 'room:', msg.message.room);
+
+		return msg.topic(topic);
 	}
-	*/
+	// HELPERS END
 
+	// LOGICS
 	function addSession(room, leader) {
 		var roomSessions;
 
@@ -832,16 +841,10 @@ module.exports = function (robot) {
 
 	}
 
-	function setTopic(msg) {
-		var topic = getTopicString(msg.message.room);
+	// LOGICS END
 
-		robot.logger.debug('Set topic:', topic, 'room:', msg.message.room);
-
-		return msg.topic(topic);
-	}
-
-	// .join command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.join.join('|') + ')$' ), function (msg) {
+	// COMMAND CALLBACKS
+	function onJoinCommand(msg) {
 		var room = msg.message.room;
 
 		var leader = msg.message.user.name;
@@ -854,10 +857,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .nevermind command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.nevermind.join('|') + ')$' ), function (msg) {
+	function onNevermindCommand(msg) {
 		var room = msg.message.room;
 
 		var userName = msg.message.user.name;
@@ -870,10 +872,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .join with command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinWith.join('|') + ') (' + userNameRegexp + ')$'), function (msg) {
+	function onJoinWithCommand(msg) {
 		var room = msg.message.room;
 		var leader = msg.match[1];
 		var userName = msg.message.user.name;
@@ -886,10 +887,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .join before command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.joinBefore.join('|') + ') (' + userNameRegexp + ')$'), function (msg) {
+	function onJoinBeforeCommand(msg) {
 		var room = msg.message.room;
 		var refUser = msg.match[1];
 		var leader = msg.message.user.name;
@@ -910,10 +910,9 @@ module.exports = function (robot) {
 			setTopic(msg);
 		}
 
-	});
+	}
 
-	// .done command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.done.join('|') + ')$'), function (msg) {
+	function onDoneCommand(msg) {
 		var userName = msg.message.user.name;
 		var room = msg.message.room;
 
@@ -935,10 +934,9 @@ module.exports = function (robot) {
 
 			setTopic(msg);
 		}
-	});
+	}
 
-	// at command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.at.join('|') + ') (\\w+)$'), function (msg) {
+	function onAtCommand(msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
@@ -954,10 +952,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .good command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.good.join('|') + ')$'), function (msg) {
+	function onGoodCommand(msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 		var session, sess;
@@ -984,10 +981,9 @@ module.exports = function (robot) {
 			}
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .uhoh command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.uhoh.join('|') + ')$'), function (msg) {
+	function onUhOhCommand(msg) {
 		var room = msg.message.room;
 		var userName = msg.message.user.name;
 
@@ -1001,10 +997,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .hold command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.hold.join('|') + ') ' + messageRegexp + '$'), function (msg) {
+	function onHoldCommand(msg) {
 		robot.logger.debug('COMMANBD HOLD');
 		var room = msg.message.room;
 		var message = msg.match[1];
@@ -1017,10 +1012,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .unhold command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.unhold.join('|') + ')$'), function (msg) {
+	function onUnholdCommand(msg) {
 		var room = msg.message.room;
 
 		var err = unholdRoom(room);
@@ -1033,10 +1027,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	// .sessions command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.sessions.join('|') + ')$'), function (msg) {
+	function onSessionsCommand(msg) {
 		var room = msg.message.room;
 		var brain = Brain();
 
@@ -1060,10 +1053,9 @@ module.exports = function (robot) {
 				return msg.join(', ');
 			}).join('\n'));
 		}
-	});
+	}
 
-	// .kick command
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.kick.join('|') + ') (' + userNameRegexp + ')$'), function (msg) {
+	function onKickCommand(msg) {
 		var room = msg.message.room;
 
 		var user = msg.message.user.name;
@@ -1076,9 +1068,9 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.message.join('|') + ') ' + messageRegexp + '$'), function (msg) {
+	function onMessageCommand(msg) {
 		var room = msg.message.room;
 
 		var userName = msg.message.user.name;
@@ -1092,10 +1084,62 @@ module.exports = function (robot) {
 		} else {
 			setTopic(msg);
 		}
-	});
+	}
 
-	robot.hear(new RegExp('^\\' + bot + '(?:' + commands.clearplease.join('|') + ')$'), function (msg) {
+	function onClearPleaseCommand(msg) {
 		Brain().clearRoomSessions(msg.message.room);
 		setTopic(msg);
-	});
+	}
+
+	function createCommandRegexp(commands, args) {
+		if (args) {
+			return new RegExp('^\\' + bot + '(?:' + commands.join('|') + ') (' + args + ')$');
+		} else {
+			return new RegExp('^\\' + bot + '(?:' + commands.join('|') + ')$');
+		}
+	}
+
+	// COMMAND CALLBACKS END
+
+	// .join command
+	robot.hear(createCommandRegexp(commands.join), onJoinCommand);
+
+	// .nevermind command
+	robot.hear(createCommandRegexp(commands.nevermind), onNevermindCommand);
+
+	// .join with command
+	robot.hear(createCommandRegexp(commands.joinWith, userNameRegexp), onJoinWithCommand);
+
+	// .join before command
+	robot.hear(createCommandRegexp(commands.joinBefore, userNameRegexp), onJoinBeforeCommand);
+
+	// .done command
+	robot.hear(createCommandRegexp(commands.done), onDoneCommand);
+
+	// at command
+	robot.hear(createCommandRegexp(commands.at, stateNameRegexp), onAtCommand);
+
+	// .good command
+	robot.hear(createCommandRegexp(commands.good), onGoodCommand);
+
+	// .uhoh command
+	robot.hear(createCommandRegexp(commands.uhoh), onUhOhCommand);
+
+	// .hold command
+	robot.hear(createCommandRegexp(commands.hold, messageRegexp), onHoldCommand);
+
+	// .unhold command
+	robot.hear(createCommandRegexp(commands.unhold), onUnholdCommand);
+
+	// .sessions command
+	robot.hear(createCommandRegexp(commands.sessions), onSessionsCommand);
+
+	// .kick command
+	robot.hear(createCommandRegexp(commands.kick, userNameRegexp), onKickCommand);
+
+	// .message command
+	robot.hear(createCommandRegexp(commands.message, messageRegexp), onMessageCommand);
+
+	// .clearplease command
+	robot.hear(createCommandRegexp(commands.clearplease), onClearPleaseCommand);
 };
