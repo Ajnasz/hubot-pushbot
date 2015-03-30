@@ -385,6 +385,15 @@ module.exports = function (robot) {
 			});
 		};
 
+		/**
+		 * @return Boolean
+		 */
+		sessionProto.isAnyUserBad = function () {
+			return this.getUsers().map(User).some(function (u) {
+				return u.isHolding();
+			});
+		};
+
 		sessionProto.resetUsers = function () {
 			this.getUsers().map(User).forEach(function (user) {
 				user.setState(userStates.waiting);
@@ -725,7 +734,7 @@ module.exports = function (robot) {
 			}
 			*/
 
-			if (sess.getState() && !sess.isAllUserGood()) {
+			if (sess.isAnyUserBad()) {
 				return new UsersNotReadyError(sess.getUsers().map(User).map(function (u) {
 					return u.getName();
 				}));
