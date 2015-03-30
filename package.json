@@ -1,6 +1,6 @@
 {
   "name": "hubot-pushbot",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "PushBot implementation for hubot which is: \"PushBot is an IRC bot that manages the topic in an IRC channel that has a push train.\"",
   "main": "index..js",
   "repository": {
