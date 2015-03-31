@@ -154,6 +154,35 @@ module.exports = function (robot) {
 	LeaderCanNotLeaveError.prototype = Error.prototype;
 	// ERRORS END
 
+	var Action = (function () {
+		var actionProto = Object.create(null);
+
+		actionProto.requireLeader = function () {
+			return false;
+		};
+
+		actionProto.requireMembership = function () {
+			return false;
+		};
+
+		return function Action(name) {
+			var output = Object.create(actionProto);
+
+			output.name = name;
+
+			return output;
+		};
+	}());
+
+	// has permission a <user> to do <action> in <session>
+	function hasPermission(user, action, session) {
+		if (action.requireLeader() && user !== session.getLeader()) {
+			return false;
+		}
+
+		return true;
+	}
+
 	// TYPES
 	var User = (function () {
 		var userProto = Object.create(null);
@@ -285,6 +314,20 @@ module.exports = function (robot) {
 
 		roomProto.getHoldMessage = function () {
 			return this.holdMessage;
+		};
+
+		roomProto.isUserInSession = function (userName) {
+			var roomSessions = this.sessions;
+
+			if (!this.sessions) {
+				return false;
+			}
+
+			var index = findIndex(roomSessions, function (session) {
+				return findUserSessionIndex(session, userName) > -1;
+			});
+
+			return index > -1;
 		};
 
 		return function Room(room) {
@@ -595,7 +638,7 @@ module.exports = function (robot) {
 
 		var users;
 
-		if (index > -1) {
+		if (Room(brain.getRoom(room)).isUserInSession(userName)) {
 			var session = brain.getRoomSessionAtIndex(room, index), userIndex;
 			var sess = Session(session);
 
@@ -819,8 +862,8 @@ module.exports = function (robot) {
 		}
 
 		session = Brain().getRoomSessionAtIndex(room, index);
-		if (Session(session).getLeader() !== leader) {
-			return new NotLeadingError();
+		if (!hasPermission(leader, Action('kick'), Session(session))) {
+			return new PermissionDeniedError();
 		}
 
 		if (leader === userName) {
