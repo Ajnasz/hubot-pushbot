@@ -228,12 +228,18 @@ module.exports = function (robot) {
 		};
 
 		brainProto.getRoom = function (room) {
-			return this.getRooms()[room];
+			var roomObj = this.getRooms()[room];
+
+			if (roomObj) {
+				return Room(roomObj);
+			}
+
+			return null;
 		};
 
 		brainProto.getRoomSessions = function (room) {
 			var roomData = this.getRoom(room);
-			return roomData && roomData.sessions;
+			return roomData && roomData.getSessions();
 		};
 
 		brainProto.hasSessions = function (room) {
@@ -255,7 +261,7 @@ module.exports = function (robot) {
 			if (!roomData) {
 				this.setRoomData(room);
 			}
-			this.getRoom(room).sessions = sessions;
+			this.getRoom(room).setSessions(sessions);
 		};
 
 		brainProto.clearRoomSessions = function (room) {
@@ -292,6 +298,15 @@ module.exports = function (robot) {
 	var Room = (function () {
 		var roomProto = Object.create(null);
 
+		roomProto.getSessions = function () {
+			return this.sessions;
+		};
+
+		roomProto.setSessions = function (sessions) {
+			this.sessions = sessions;
+			this.__ref.sessions = sessions;
+		};
+
 		roomProto.isHolded = function () {
 			return this.holded;
 		};
@@ -317,9 +332,9 @@ module.exports = function (robot) {
 		};
 
 		roomProto.isUserInSession = function (userName) {
-			var roomSessions = this.sessions;
+			var roomSessions = this.getSessions();
 
-			if (!this.sessions) {
+			if (!roomSessions) {
 				return false;
 			}
 
@@ -638,7 +653,7 @@ module.exports = function (robot) {
 
 		var users;
 
-		if (Room(brain.getRoom(room)).isUserInSession(userName)) {
+		if (brain.getRoom(room).isUserInSession(userName)) {
 			var session = brain.getRoomSessionAtIndex(room, index), userIndex;
 			var sess = Session(session);
 
@@ -723,7 +738,7 @@ module.exports = function (robot) {
 
 		var brain = Brain();
 
-		if (Room(brain.getRoom(room)).isHolded()) {
+		if (brain.getRoom(room).isHolded()) {
 			return new RoomHoldedError();
 		}
 
@@ -759,7 +774,7 @@ module.exports = function (robot) {
 
 		brain = Brain();
 
-		if (Room(brain.getRoom(room)).isHolded()) {
+		if (brain.getRoom(room).isHolded()) {
 			return new RoomHoldedError();
 		}
 
@@ -801,14 +816,12 @@ module.exports = function (robot) {
 
 	function unholdRoom(room) {
 		var brain = Brain();
-		var existingRoom = brain.getRoom(room);
-		var roomObj;
-		if (!existingRoom) {
-			createRoom(room);
-			existingRoom = brain.getRoom(room);
-		}
+		var roomObj = brain.getRoom(room);
 
-		roomObj = Room(existingRoom);
+		if (!roomObj) {
+			createRoom(room);
+			roomObj = brain.getRoom(room);
+		}
 
 		if (!roomObj.isHolded()) {
 			return new NotChangedError();
@@ -822,14 +835,11 @@ module.exports = function (robot) {
 
 	function holdRoom(room, message) {
 		var brain = Brain();
-		var existingRoom = brain.getRoom(room);
-		var roomObj;
-		if (!existingRoom) {
+		var roomObj = brain.getRoom(room);
+		if (!roomObj) {
 			createRoom(room);
-			existingRoom = brain.getRoom(room);
+			roomObj = brain.getRoom(room);
 		}
-
-		roomObj = Room(existingRoom);
 
 		roomObj.hold();
 		roomObj.setHoldMessage(message);
@@ -839,7 +849,7 @@ module.exports = function (robot) {
 
 	function getTopicString(room) {
 		var brain = Brain();
-		var roomObj = Room(brain.getRoom(room));
+		var roomObj = brain.getRoom(room);
 		var roomSessions = Brain().getRoomSessions(room);
 
 		var topic = [];
