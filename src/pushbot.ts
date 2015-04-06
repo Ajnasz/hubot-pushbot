@@ -456,7 +456,12 @@ class Room {
 	}
 }
 
-module.exports = function (robot: Robot) {
+interface CommandAlias {
+	[index: number]: string;
+	join(s: string);
+}
+
+module.exports = (robot: Robot) => {
 	'use strict';
 
 	function createBrain(): Brain {
@@ -1142,7 +1147,7 @@ module.exports = function (robot: Robot) {
 		setTopic(msg);
 	}
 
-	function createCommandRegexp(commands: string[], args?: string): RegExp {
+	function createCommandRegexp(commands: CommandAlias, args?: string): RegExp {
 		if (args) {
 			return new RegExp('^\\' + bot + '(?:' + commands.join('|') + ') (' + args + ')$');
 		} else {
