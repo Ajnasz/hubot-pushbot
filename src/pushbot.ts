@@ -64,7 +64,7 @@ function findUserSessionIndex(session: SessionData, userName: string): number {
 	var index: number = -1;
 	var users: UserData[] = sessionObj(session).getUsers();
 
-	index = findIndex(users, function (user) {
+	index = findIndex(users, (user): boolean => {
 		return createUser(user).getName() === userName;
 	});
 
@@ -344,9 +344,9 @@ class Session {
 	}
 
 	isLeaderJoined(): boolean {
-		return this.getUsers().some(function (user) {
-			this.isUserLeader(createUser(user).getName());
-		}.bind(this));
+		return this.getUsers().some((user): boolean => {
+			return this.isUserLeader(createUser(user).getName());
+		});
 	}
 
 	isUserLeader(userName: string): boolean {
@@ -354,19 +354,19 @@ class Session {
 	}
 
 	isAllUserGood(): boolean {
-		return this.getUsers().map(createUser).every(function (u) {
+		return this.getUsers().map(createUser).every((u) => {
 			return u.isGood();
 		});
 	}
 
 	isAnyUserBad(): boolean {
-		return this.getUsers().map(createUser).some(function (u) {
+		return this.getUsers().map(createUser).some((u) => {
 			return u.isHolding();
 		});
 	}
 
 	resetUsers(): void {
-		this.getUsers().map(createUser).forEach(function (user) {
+		this.getUsers().map(createUser).forEach((user) => {
 			user.setState(UserState.Waiting);
 		});
 	}
@@ -448,7 +448,7 @@ class Room {
 			return false;
 		}
 
-		var index: number = findIndex(roomSessions, function (session) {
+		var index: number = findIndex(roomSessions, (session) => {
 			return findUserSessionIndex(session, userName) > -1;
 		});
 
@@ -511,15 +511,13 @@ module.exports = function (robot: Robot) {
 		return true;
 	}
 
-	// TYPES END
-
 	// HELPERS
 	function getSortedSessionUsers(sess: Session): User[] {
 		// var sess = createSession(session);
 		var users: User[] = sess.getUsers().map(createUser);
 		var leader: string = sess.getLeader();
 
-		users.sort(function (a, b) {
+		users.sort((a, b) => {
 			if (a.getName() === leader) {
 				return -1;
 			} else if (b.getName() === leader) {
@@ -533,7 +531,7 @@ module.exports = function (robot: Robot) {
 	}
 
 	function getUserListStr(users: User[]): string {
-		return users.map(function (user) {
+		return users.map((user) => {
 			if (user.isGood()) {
 				return goodUserMarker + user.getName();
 			} else if (user.isHolding()) {
@@ -616,7 +614,7 @@ module.exports = function (robot: Robot) {
 		var roomSessions: SessionData[] = brain.getRoomSessions(room);
 		var index: number = -1;
 
-		index = findIndex(roomSessions, function (session) {
+		index = findIndex(roomSessions, (session) => {
 			return sessionObj(session).isUserLeader(leader);
 		});
 
@@ -635,7 +633,7 @@ module.exports = function (robot: Robot) {
 
 		roomSessions = brain.getRoomSessions(room);
 
-		var index: number = findIndex(roomSessions, function (session) {
+		var index: number = findIndex(roomSessions, (session): boolean => {
 			return findUserSessionIndex(session, userName) > -1;
 		});
 
@@ -649,7 +647,7 @@ module.exports = function (robot: Robot) {
 
 		var roomSessions: SessionData[] = brain.getRoomSessions(room);
 
-		var index: number = findIndex(roomSessions, function (session): boolean {
+		var index: number = findIndex(roomSessions, (session): boolean => {
 			return findUserSessionIndex(session, userName) > -1;
 		});
 
@@ -752,10 +750,10 @@ module.exports = function (robot: Robot) {
 			sess = sessionObj(session);
 
 			if (sess.getState() && !sess.isAllUserGood()) {
-				holdingUsers = sess.getUsers().map(createUser).filter(function (user) {
+				holdingUsers = sess.getUsers().map(createUser).filter((user): boolean => {
 					return !user.isGood();
 				});
-				return new UsersNotReadyError(holdingUsers.map(function (u) {
+				return new UsersNotReadyError(holdingUsers.map((u): string => {
 					return u.getName();
 				}));
 			}
@@ -795,7 +793,7 @@ module.exports = function (robot: Robot) {
 			*/
 
 			if (sess.isAnyUserBad()) {
-				return new UsersNotReadyError(sess.getUsers().map(createUser).map(function (u) {
+				return new UsersNotReadyError(sess.getUsers().map(createUser).map((u): string => {
 					return u.getName();
 				}));
 			}
@@ -992,7 +990,7 @@ module.exports = function (robot: Robot) {
 			nextSession = createBrain().getRoomSessionAtIndex(room, 0);
 
 			if (nextSession) {
-				msg.send(nextSession.users.map(createUser).map(function (u) {
+				msg.send(nextSession.users.map(createUser).map((u) => {
 					return u.getName();
 				}).join(', ') + ': You are up!');
 			}
@@ -1040,7 +1038,7 @@ module.exports = function (robot: Robot) {
 			sess = sessionObj(session);
 
 			if (sess.isAllUserGood()) {
-				msg.send(getSortedSessionUsers(sess).map(function (user) {
+				msg.send(getSortedSessionUsers(sess).map((user) => {
 					return user.getName();
 				}).join(', ') + ': Everyone is ready');
 			}
@@ -1101,7 +1099,7 @@ module.exports = function (robot: Robot) {
 		var roomSessions: SessionData[] = brain.getRoomSessions(room);
 
 		if (roomSessions.length) {
-			msg.send(roomSessions.map(function (session) {
+			msg.send(roomSessions.map((session): string => {
 				var msg = [];
 				var sess = sessionObj(session);
 
