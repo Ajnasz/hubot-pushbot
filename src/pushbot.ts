@@ -849,7 +849,8 @@ module.exports = (robot: Robot) => {
 		var topic: string[] = [];
 
 		if (roomObj.isHolded()) {
-			topic.push('HOLD: ☂ ' + roomObj.getHoldMessage() + ' ☂');
+			let holdMessage = roomObj.getHoldMessage();
+			topic.push(`HOLD: ☂ ${holdMessage}  ☂`);
 		}
 
 		topic = topic.concat(roomSessions.map(getStateStrForSession));
