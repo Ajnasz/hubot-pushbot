@@ -20,7 +20,9 @@
     "name": "Lajos Koszti"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "typescript": "^1.5.0-alpha"
+  },
   "maintainers": [
     {
       "name": "Ajnasz",
@@ -28,7 +30,8 @@
     }
   ],
   "scripts": {
-    "test": "$(npm bin)/mocha --ui bdd"
+    "test": "$(npm bin)/mocha --ui bdd",
+    "install": "$(npm bin)/tsc src/pushbot.ts"
   },
   "engines": {
     "node": ">= 0.10.x"
