@@ -490,14 +490,6 @@ module.exports = function (robot: Robot) {
 		goodUserMarker: string = '✓',
 		holdingUserMarker: string = '✗';
 
-	robot.brain.on('loaded', function () {
-		if (!robot.brain.data.pushbot) {
-			robot.brain.data.pushbot = {};
-		}
-	});
-
-	// ERRORS END
-
 	// has permission a <user> to do <action> in <session>
 	function hasPermission(user: string, action: Action, session: Session): boolean {
 		if (action.requireLeader() && user !== session.getLeader()) {
@@ -1157,6 +1149,12 @@ module.exports = function (robot: Robot) {
 			return new RegExp('^\\' + bot + '(?:' + commands.join('|') + ')$');
 		}
 	}
+
+	robot.brain.on('loaded', () => {
+		if (!robot.brain.data.pushbot) {
+			robot.brain.data.pushbot = {};
+		}
+	});
 
 	// COMMAND CALLBACKS END
 
