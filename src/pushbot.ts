@@ -372,7 +372,7 @@ class Session {
 	}
 }
 
-var defaultMessage: string = '-';
+const defaultMessage = '-';
 
 function createSession(leader: string): SessionData {
 	return {
@@ -480,18 +480,14 @@ module.exports = function (robot: Robot) {
 		clearplease: ['clearplease']
 	};
 
-	var bot: string = '.';
+	const messageRegexp: string = '[\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+',
+		userNameRegexp: string = '[\\w_-]+',
+		stateNameRegexp: string = userNameRegexp;
 
-	var messageRegexp: string = '[\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+';
+	const emptyMessage: string = '-';
 
-	var userNameRegexp: string = '[\\w_-]+';
-
-
-	var emptyMessage: string = '-';
-
-	var stateNameRegexp: string = userNameRegexp;
-
-	var goodUserMarker: string = '✓',
+	const bot: string = '.',
+		goodUserMarker: string = '✓',
 		holdingUserMarker: string = '✗';
 
 	robot.brain.on('loaded', function () {
