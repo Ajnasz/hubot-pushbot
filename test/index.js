@@ -953,7 +953,7 @@ describe('pushbot', function () {
 				});
 				describe('tries to send unhold', function () {
 					var cmd = '.unhold';
-					it('should change back the topic', function () {
+					it('should not change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
 						sinon.spy(msg, 'topic');
