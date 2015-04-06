@@ -6,6 +6,12 @@ var sinon = require('sinon');
 
 var pushbot = require('../src/pushbot');
 
+var UserStates = {
+	Good: 0,
+	Uhoh: 1,
+	Waiting: 2
+};
+
 function rand() {
 	'use strict';
 	return Math.round(Math.random() * 100);
@@ -206,7 +212,7 @@ describe('pushbot', function () {
 			expect(firstUser.name).to.deep.equal(msg.message.user.name);
 
 			// TODO We should be able to set this from configuration
-			expect(firstUser.state).to.deep.equal('waiting');
+			expect(firstUser.state).to.deep.equal(UserStates.Waiting);
 		});
 
 		it('should create as many sessions, as many times called', function () {
@@ -404,7 +410,7 @@ describe('pushbot', function () {
 			expect(firstUser.name).to.deep.equal(msg.message.user.name);
 
 			// TODO We should be able to set this from configuration
-			expect(firstUser.state).to.deep.equal('waiting');
+			expect(firstUser.state).to.deep.equal(UserStates.Waiting);
 		});
 
 		describe('set topic', function () {
@@ -533,7 +539,7 @@ describe('pushbot', function () {
 			var cmd = '.uhoh';
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
-			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', 'uhoh');
+			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', UserStates.Uhoh);
 		});
 	});
 	describe('.good', function () {
@@ -549,9 +555,8 @@ describe('pushbot', function () {
 			var cmd = '.good';
 			var msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
-			var session = getFirstRoomSession(robot, room);
 
-			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', 'good');
+			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', UserStates.Good);
 		});
 
 		it('should send with everyone is ready if every user is good', function () {
