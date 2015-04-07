@@ -30,7 +30,7 @@
     }
   ],
   "scripts": {
-    "test": "$(npm bin)/mocha --ui bdd",
+    "test": "$(npm bin)/tsc src/pushbot.ts && $(npm bin)/mocha --ui bdd",
     "install": "$(npm bin)/tsc src/pushbot.ts"
   },
   "engines": {
