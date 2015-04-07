@@ -71,6 +71,12 @@ function findUserSessionIndex(session: SessionData, userName: string): number {
 	return index;
 }
 
+function invoke(method) {
+	return (obj) => {
+		return obj[method]();
+	}
+}
+
 
 class PushbotError implements Error {
 	public name: string;
@@ -362,15 +368,11 @@ class Session {
 	}
 
 	isAllUserGood(): boolean {
-		return this.getUsers().map(createUser).every((u) => {
-			return u.isGood();
-		});
+		return this.getUsers().map(createUser).every(invoke('isGood'));
 	}
 
 	isAnyUserBad(): boolean {
-		return this.getUsers().map(createUser).some((u) => {
-			return u.isHolding();
-		});
+		return this.getUsers().map(createUser).some(invoke('isHolding'));
 	}
 
 	resetUsers(): void {
@@ -752,12 +754,10 @@ module.exports = (robot: Robot) => {
 			sess = sessionObj(session);
 
 			if (sess.getState() && !sess.isAllUserGood()) {
-				holdingUsers = sess.getUsers().map(createUser).filter((user): boolean => {
+				holdingUsers = sess.getUsers().map(createUser).filter((user) => {
 					return !user.isGood();
 				});
-				return new UsersNotReadyError(holdingUsers.map((u): string => {
-					return u.getName();
-				}));
+				return new UsersNotReadyError(holdingUsers.map(invoke('getName')));
 			}
 
 			if (!sess.isUserLeader(userName)) {
@@ -795,9 +795,7 @@ module.exports = (robot: Robot) => {
 			*/
 
 			if (sess.isAnyUserBad()) {
-				return new UsersNotReadyError(sess.getUsers().map(createUser).map((u): string => {
-					return u.getName();
-				}));
+				return new UsersNotReadyError(sess.getUsers().map(createUser).map(invoke('getName')));
 			}
 
 			if (sess.getState() === state) {
@@ -993,9 +991,7 @@ module.exports = (robot: Robot) => {
 			nextSession = createBrain().getRoomSessionAtIndex(room, 0);
 
 			if (nextSession) {
-				msg.send(nextSession.users.map(createUser).map((u) => {
-					return u.getName();
-				}).join(', ') + ': You are up!');
+				msg.send(nextSession.users.map(createUser).map(invoke('getName')).join(', ') + ': You are up!');
 			}
 
 			setTopic(msg);
@@ -1041,9 +1037,7 @@ module.exports = (robot: Robot) => {
 			sess = sessionObj(session);
 
 			if (sess.isAllUserGood()) {
-				msg.send(getSortedSessionUsers(sess).map((user) => {
-					return user.getName();
-				}).join(', ') + ': Everyone is ready');
+				msg.send(getSortedSessionUsers(sess).map(invoke('getName')).join(', ') + ': Everyone is ready');
 			}
 			setTopic(msg);
 		}
