@@ -182,11 +182,14 @@ function createUser(userData: UserData) {
 	return new User(userData);
 }
 
-class Action {
-	private name: string;
-	constructor(name: string) {
-		this.name = name;
-	}
+interface Action {
+	name: string;
+	requireLeader(): boolean;
+	requireMembership(): boolean;
+}
+
+class KickAction implements Action {
+	name: string = 'kick';
 	requireLeader(): boolean {
 		return false;
 	}
@@ -194,11 +197,16 @@ class Action {
 	requireMembership(): boolean {
 		return false;
 	}
-
 }
 
 function createAction(name: string): Action {
-	return new Action(name);
+	switch (name) {
+		case 'kick':
+			return new KickAction();
+			break;
+	}
+
+	return null;
 }
 
 class Brain {
@@ -413,7 +421,7 @@ class Room {
 		return this.sessions;
 	}
 
-	setSessions(sessions): void {
+	setSessions(sessions: SessionData[]): void {
 		this.sessions = sessions;
 		this.__ref.sessions = sessions;
 	}
@@ -432,7 +440,7 @@ class Room {
 		this.__ref.holded = false;
 	}
 
-	setHoldMessage(message): void {
+	setHoldMessage(message: string): void {
 		this.holdMessage = message;
 		this.__ref.holdMessage = message;
 	}
@@ -441,7 +449,7 @@ class Room {
 		return this.holdMessage;
 	}
 
-	isUserInSession(userName): boolean {
+	isUserInSession(userName: string): boolean {
 		var roomSessions: SessionData[] = this.getSessions();
 
 		if (!roomSessions) {
@@ -481,6 +489,7 @@ module.exports = (robot: Robot) => {
 		kick: ['kick'],
 		at: ['at'],
 		done: ['done'],
+		drive: ['drive'],
 		sessions: ['sessions'],
 		clearplease: ['clearplease']
 	};
@@ -1148,6 +1157,24 @@ module.exports = (robot: Robot) => {
 		setTopic(msg);
 	}
 
+	function onDriveCommand(msg: Msg): void {
+		var sessionIndex: number, session: SessionData;
+		var room: string = msg.message.room;
+		var userName: string = msg.message.user.name;
+
+		sessionIndex = findSessionIndexWithUser(room, userName);
+
+		if (sessionIndex === -1) {
+			msg.reply(new NotInSessionError().message);
+			return;
+		}
+
+		session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
+		sessionObj(session).setLeader(userName);
+
+		setTopic(msg);
+	}
+
 	function createCommandRegexp(commands: CommandAlias, args?: string): RegExp {
 		if (args) {
 			return new RegExp('^\\' + bot + '(?:' + commands.join('|') + ') (' + args + ')$');
@@ -1205,4 +1232,7 @@ module.exports = (robot: Robot) => {
 
 	// .clearplease command
 	robot.hear(createCommandRegexp(commands.clearplease), onClearPleaseCommand);
+
+	// .drive command
+	robot.hear(createCommandRegexp(commands.drive), onDriveCommand);
 };

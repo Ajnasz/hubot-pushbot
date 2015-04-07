@@ -836,6 +836,57 @@ describe('pushbot', function () {
 	});
 	describe.skip('.sessions', function () {});
 
+	describe('.drive', function () {
+		var newUserName = 'user-' + rand();
+		var newUserId = rand();
+		beforeEach(function () {
+			var cmd, msg;
+			cmd = '.join';
+			msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			cmd = '.join with ' + userName;
+			msg = createMessage(robot, cmd, room, newUserName, newUserId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			var session = getFirstRoomSession(robot, room);
+			expect(session.users).to.have.length(2);
+		});
+
+		afterEach(function () {
+		});
+
+		it('should change the leader', function () {
+			var cmd, msg;
+			cmd = '.drive';
+			msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+			sinon.spy(msg, 'reply');
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			sinon.assert.notCalled(msg.reply);
+			msg.reply.restore();
+
+			var session = getFirstRoomSession(robot, room);
+			expect(session.leader).to.deep.equal(newUserName);
+		});
+
+		it('should set new topic, where the new user is on the first place', function () {
+			var cmd, msg;
+			cmd = '.drive';
+			msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+			sinon.spy(msg, 'topic');
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			sinon.assert.calledWithExactly(msg.topic, newUserName + ' + ' + userName);
+			msg.topic.restore();
+		});
+
+	});
+
 	describe('use cases', function () {
 		describe('when the user isn\'t joined to session', function () {
 			describe('and there is one session', function () {
