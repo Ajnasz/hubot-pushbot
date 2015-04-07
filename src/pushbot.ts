@@ -926,13 +926,17 @@ module.exports = (robot: Robot) => {
 
 	// LOGICS END
 
+	function extractMsgDetails(msg: Msg) {
+		return {
+			room: msg.message.room,
+			userName: msg.message.user.name
+		};
+	}
+
 	// COMMAND CALLBACKS
 	function onJoinCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-
-		var leader: string = msg.message.user.name;
-
-		var err: Error = addSession(room, leader);
+		var {room, userName} = extractMsgDetails(msg);
+		var err: Error = addSession(room, userName);
 
 		if (err) {
 			msg.reply(err.message);
@@ -943,9 +947,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onNevermindCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-
-		var userName: string = msg.message.user.name;
+		var {room, userName} = extractMsgDetails(msg);
 
 		var err: Error = leaveSession(room, userName);
 
@@ -958,9 +960,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onJoinWithCommand(msg: Msg): void {
-		var room: string = msg.message.room;
+		var {room, userName} = extractMsgDetails(msg);
 		var leader: string = msg.match[1];
-		var userName: string = msg.message.user.name;
 
 		var err: Error = joinSession(room, leader, userName);
 
@@ -973,9 +974,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onJoinBeforeCommand(msg: Msg): void {
-		var room: string = msg.message.room;
+		var {room, userName} = extractMsgDetails(msg);
 		var refUser: string = msg.match[1];
-		var leader: string = msg.message.user.name;
 
 		var sessionIndex: number = findSessionIndexWithUser(room, refUser);
 		var err: Error;
@@ -983,7 +983,7 @@ module.exports = (robot: Robot) => {
 		if (sessionIndex === -1) {
 			err = new NotInSessionError();
 		} else {
-			err = insertSession(room, leader, sessionIndex);
+			err = insertSession(room, userName, sessionIndex);
 		}
 
 		if (err) {
@@ -996,18 +996,16 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onDoneCommand(msg: Msg): void {
-		var userName: string = msg.message.user.name;
-		var room: string = msg.message.room;
+		var {room, userName} = extractMsgDetails(msg);
 
 		var err: Error = finish(room, userName);
-		var nextSession: SessionData;
 
 		if (err) {
 			if (err.name !== 'NotInSessionError') {
 				msg.reply(err.message);
 			}
 		} else {
-			nextSession = createBrain().getRoomSessionAtIndex(room, 0);
+			var nextSession: SessionData = createBrain().getRoomSessionAtIndex(room, 0);
 
 			if (nextSession) {
 				msg.send(nextSession.users.map(createUser).map(invoke('getName')).join(', ') + ': You are up!');
@@ -1018,8 +1016,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onAtCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-		var userName: string = msg.message.user.name;
+		var {room, userName} = extractMsgDetails(msg);
 
 		var err: Error = setRoomState(room, userName, msg.match[1]);
 
@@ -1036,8 +1033,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onGoodCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-		var userName: string = msg.message.user.name;
+		var {room, userName} = extractMsgDetails(msg);
 		var session: SessionData, sess: Session;
 		var sessionIndex: number;
 
@@ -1063,8 +1059,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onUhOhCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-		var userName: string = msg.message.user.name;
+		var {room, userName} = extractMsgDetails(msg);
 
 		var err: Error = setUserState(room, userName, UserState.Uhoh);
 
@@ -1135,11 +1130,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onKickCommand(msg: Msg): void {
-		var room: string = msg.message.room;
+		var {room, userName} = extractMsgDetails(msg);
 
-		var user: string = msg.message.user.name;
-
-		var err: Error = kickUser(room, user, msg.match[1]);
+		var err: Error = kickUser(room, userName, msg.match[1]);
 
 		if (err && err.name !== 'NotInSessionError') {
 			msg.reply(err.message);
@@ -1150,9 +1143,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onMessageCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-
-		var userName: string = msg.message.user.name;
+		var {room, userName} = extractMsgDetails(msg);
 
 		var err: Error = setMessage(room, userName, msg.match[1]);
 
@@ -1171,9 +1162,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onDriveCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-		var userName: string = msg.message.user.name;
-
+		var {room, userName} = extractMsgDetails(msg);
 
 		var err: Error = driveSession(room, userName);
 
