@@ -544,12 +544,13 @@ module.exports = (robot: Robot) => {
 
 	function getUserListStr(users: User[]): string {
 		return users.map((user) => {
+			let userName = user.getName();
 			if (user.isGood()) {
-				return goodUserMarker + user.getName();
+				return `${goodUserMarker}${userName}`;
 			} else if (user.isHolding()) {
-				return holdingUserMarker + user.getName();
+				return `${holdingUserMarker}${userName}`;
 			} else {
-				return user.getName();
+				return userName;
 			}
 		}).join(' + ');
 	}
