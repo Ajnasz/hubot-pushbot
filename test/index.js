@@ -14,7 +14,7 @@ var UserStates = {
 
 function rand() {
 	'use strict';
-	return Math.round(Math.random() * 100);
+	return Math.round(Math.random() * 10000000);
 }
 
 
@@ -732,17 +732,29 @@ describe('pushbot', function () {
 	describe('.kick', function () {
 		var newUserName = 'user-' + rand();
 		var newUserId = rand();
+
 		beforeEach(function () {
-			var cmd, msg;
+			var cmd, msg, session;
 			cmd = '.join';
 			msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
+
+			session = getFirstRoomSession(robot, room);
+
+			expect(session.users).to.have.length(1);
 
 			cmd = '.join with ' + userName;
 			msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+			sinon.spy(msg, 'reply');
+
 			callCommand(findCommand(robot, cmd), msg);
 
-			var session = getFirstRoomSession(robot, room);
+			sinon.assert.notCalled(msg.reply);
+
+			session = getFirstRoomSession(robot, room);
+
 			expect(session.users).to.have.length(2);
 		});
 		afterEach(function () {
