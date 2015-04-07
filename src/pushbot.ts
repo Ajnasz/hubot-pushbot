@@ -938,7 +938,7 @@ module.exports = (robot: Robot) => {
 
 		let err = leaveSession(room, userName);
 
-		if (err && err.name !== 'NotInSessionError') {
+		if (err && !(err instanceof NotInSessionError)) {
 			msg.reply(err.message);
 			robot.logger.error('.nevermind:', err);
 		} else {
@@ -988,7 +988,7 @@ module.exports = (robot: Robot) => {
 		let err = finish(room, userName);
 
 		if (err) {
-			if (err.name !== 'NotInSessionError') {
+			if (!(err instanceof NotInSessionError)) {
 				msg.reply(err.message);
 			}
 		} else {
@@ -1010,7 +1010,7 @@ module.exports = (robot: Robot) => {
 		robot.logger.debug('set room state', err);
 
 		if (err) {
-			if (err.name !== 'NotChangedError') {
+			if (!(err instanceof NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.at:', err);
 			}
@@ -1025,7 +1025,7 @@ module.exports = (robot: Robot) => {
 		let err = setUserState(room, userName, UserState.Good);
 
 		if (err) {
-			if (err.name !== 'NotChangedError') {
+			if (!(err instanceof NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.good:', err);
 			}
@@ -1049,7 +1049,7 @@ module.exports = (robot: Robot) => {
 		let err = setUserState(room, userName, UserState.Uhoh);
 
 		if (err) {
-			if (err.name !== 'NotChangedError') {
+			if (!(err instanceof NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.uhoh:', err);
 			}
@@ -1079,7 +1079,7 @@ module.exports = (robot: Robot) => {
 		let err = unholdRoom(room);
 
 		if (err) {
-			if (err.name !== 'NotChangedError') {
+			if (!(err instanceof NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.unhold:', err);
 			}
@@ -1119,7 +1119,7 @@ module.exports = (robot: Robot) => {
 
 		let err = kickUser(room, userName, msg.match[1]);
 
-		if (err && err.name !== 'NotInSessionError') {
+		if (err && !(err instanceof NotInSessionError)) {
 			msg.reply(err.message);
 			robot.logger.error('.kick:', err);
 		} else {
@@ -1133,7 +1133,7 @@ module.exports = (robot: Robot) => {
 		let err = setMessage(room, userName, msg.match[1]);
 
 		if (err ) {
-			if (err.name !== 'NotChangedError') {
+			if (!(err instanceof NotChangedError)) {
 				msg.reply(err.message);
 			}
 		} else {
