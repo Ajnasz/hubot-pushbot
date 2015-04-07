@@ -885,6 +885,21 @@ describe('pushbot', function () {
 			msg.topic.restore();
 		});
 
+		it('should not call reply or topic if the leader wants to drive', function () {
+			var cmd, msg;
+			cmd = '.drive';
+			msg = createMessage(robot, cmd, room, userName, userId);
+
+			sinon.spy(msg, 'topic');
+			sinon.spy(msg, 'reply');
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			sinon.assert.notCalled(msg.topic);
+			sinon.assert.notCalled(msg.reply);
+			msg.topic.restore();
+			msg.reply.restore();
+		});
 	});
 
 	describe('use cases', function () {

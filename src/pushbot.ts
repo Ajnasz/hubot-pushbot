@@ -856,6 +856,12 @@ module.exports = (robot: Robot) => {
 		}
 
 		var session: SessionData = createBrain().getRoomSessionAtIndex(room, sessionIndex);
+		var sess: Session = sessionObj(session);
+
+		if (sess.isUserLeader(userName)) {
+			return new NotChangedError();
+		}
+
 		sessionObj(session).setLeader(userName);
 
 		return null;
@@ -1172,6 +1178,10 @@ module.exports = (robot: Robot) => {
 		var err: Error = driveSession(room, userName);
 
 		if (err) {
+			if (err instanceof NotChangedError) {
+				return;
+			}
+
 			msg.reply(err.message);
 			return;
 		}
