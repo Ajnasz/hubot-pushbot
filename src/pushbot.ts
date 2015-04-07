@@ -848,6 +848,19 @@ module.exports = (robot: Robot) => {
 		return null;
 	}
 
+	function driveSession(room: string, userName: string) {
+		var sessionIndex = findSessionIndexWithUser(room, userName);
+
+		if (sessionIndex === -1) {
+			return new NotInSessionError();
+		}
+
+		var session: SessionData = createBrain().getRoomSessionAtIndex(room, sessionIndex);
+		sessionObj(session).setLeader(userName);
+
+		return null;
+	}
+
 	function getTopicString(room: string): string {
 		var brain: Brain = createBrain();
 		var roomObj: Room = brain.getRoom(room);
@@ -1152,19 +1165,16 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onDriveCommand(msg: Msg): void {
-		var sessionIndex: number, session: SessionData;
 		var room: string = msg.message.room;
 		var userName: string = msg.message.user.name;
 
-		sessionIndex = findSessionIndexWithUser(room, userName);
 
-		if (sessionIndex === -1) {
-			msg.reply(new NotInSessionError().message);
+		var err: Error = driveSession(room, userName);
+
+		if (err) {
+			msg.reply(err.message);
 			return;
 		}
-
-		session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
-		sessionObj(session).setLeader(userName);
 
 		setTopic(msg);
 	}
