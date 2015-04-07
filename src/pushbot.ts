@@ -45,8 +45,8 @@
 /// <reference path="../typings/hubotrobot.d.ts" />
 
 function findIndex(array: any[], test: Function) {
-	var index: number = -1;
-	for (var i: number = 0, rl: number = array.length; i < rl; i++) {
+	let index = -1;
+	for (let i = 0, rl = array.length; i < rl; i++) {
 		if (test(array[i])) {
 			index = i;
 			break;
@@ -61,8 +61,8 @@ function sessionObj(session): Session {
 }
 
 function findUserSessionIndex(session: SessionData, userName: string): number {
-	var index: number = -1;
-	var users: UserData[] = sessionObj(session).getUsers();
+	let index = -1;
+	let users = sessionObj(session).getUsers();
 
 	index = findIndex(users, (user): boolean => {
 		return createUser(user).getName() === userName;
@@ -229,7 +229,7 @@ class Brain {
 	}
 
 	getRoom (room: string): Room {
-		var roomObj: RoomData = this.getRooms()[room];
+		let roomObj = this.getRooms()[room];
 
 		if (roomObj) {
 			return new Room(roomObj);
@@ -239,12 +239,12 @@ class Brain {
 	}
 
 	getRoomSessions (room: string): SessionData[] {
-		var roomData: Room = this.getRoom(room);
+		let roomData = this.getRoom(room);
 		return roomData && roomData.getSessions();
 	}
 
 	hasSessions (room: string): boolean {
-		var roomSessions: SessionData[] = this.getRoomSessions(room);
+		let roomSessions = this.getRoomSessions(room);
 
 		return roomSessions && roomSessions.length > 0;
 	}
@@ -257,7 +257,7 @@ class Brain {
 	}
 
 	setRoomSessions (room: string, sessions: SessionData[]): void {
-		var roomData: Room = this.getRoom(room);
+		let roomData = this.getRoom(room);
 
 		if (!roomData) {
 			this.setRoomData(room);
@@ -274,7 +274,7 @@ class Brain {
 	}
 
 	getRoomSessionAtIndex (room: string, index: number): SessionData {
-		var rooms: SessionData[] = this.getRoomSessions(room);
+		let rooms = this.getRoomSessions(room);
 
 		if (rooms && rooms.length > index) {
 			return rooms[index];
@@ -452,18 +452,23 @@ class Room {
 	}
 
 	isUserInSession(userName: string): boolean {
-		var roomSessions: SessionData[] = this.getSessions();
+		let roomSessions = this.getSessions();
 
 		if (!roomSessions) {
 			return false;
 		}
 
-		var index: number = findIndex(roomSessions, (session) => {
+		let index = findIndex(roomSessions, (session) => {
 			return findUserSessionIndex(session, userName) > -1;
 		});
 
 		return index > -1;
 	}
+}
+
+interface MsgDetails {
+	room: string;
+	userName: string;
 }
 
 interface CommandAlias {
@@ -478,7 +483,7 @@ module.exports = (robot: Robot) => {
 		return new Brain(robot);
 	}
 
-	var commands = {
+	let commands = {
 		join: ['join'],
 		joinBefore: ['join before'],
 		joinWith: ['join with'],
@@ -517,9 +522,8 @@ module.exports = (robot: Robot) => {
 
 	// HELPERS
 	function getSortedSessionUsers(sess: Session): User[] {
-		// var sess = createSession(session);
-		var users: User[] = sess.getUsers().map(createUser);
-		var leader: string = sess.getLeader();
+		let users = sess.getUsers().map(createUser);
+		let leader = sess.getLeader();
 
 		users.sort((a, b) => {
 			if (a.getName() === leader) {
@@ -547,8 +551,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function getStateStrForSession(session: SessionData): string {
-		var sess: Session = sessionObj(session);
-		var msg: string[] = [];
+		let sess = sessionObj(session);
+		let msg: string[] = [];
 
 		if (sess.getMessage() && sess.getMessage() !== emptyMessage) {
 			msg.push(sess.getMessage());
@@ -564,7 +568,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function createRoom(room): void {
-		var brain: Brain = createBrain();
+		let brain = createBrain();
 
 		if (!brain.getRoomSessions(room)) {
 			brain.setRoomSessions(room, []);
@@ -572,7 +576,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function setTopic(msg: Msg): void {
-		var topic: string = getTopicString(msg.message.room);
+		let topic = getTopicString(msg.message.room);
 
 		robot.logger.debug('Set topic:', topic, 'room:', msg.message.room);
 
@@ -582,8 +586,6 @@ module.exports = (robot: Robot) => {
 
 	// LOGICS
 	function addSession(room: string, leader: string): Error {
-		var roomSessions: SessionData[];
-
 		createRoom(room);
 
 		// if leader is participating in any session in the room, don't allow to
@@ -592,22 +594,20 @@ module.exports = (robot: Robot) => {
 		// 	return new AlreadyInSessionError();
 		// }
 
-		roomSessions = createBrain().getRoomSessions(room);
+		let roomSessions = createBrain().getRoomSessions(room);
 		roomSessions.push(createSession(leader));
 
 		return null;
 	}
 
 	function insertSession(room: string, leader: string, beforeIndex: number): Error {
-		var roomSessions: SessionData[];
-
 		// if leader is participating in any session in the room, don't allow to
 		// start a new one
 		// if (isUserParticipating(room, leader)) {
 		// 	return new AlreadyInSessionError();
 		// }
 
-		roomSessions = createBrain().getRoomSessions(room);
+		let roomSessions = createBrain().getRoomSessions(room);
 
 		roomSessions.splice(beforeIndex, 0, createSession(leader));
 		return null;
@@ -803,8 +803,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function unholdRoom(room: string): Error {
-		var brain: Brain = createBrain();
-		var roomObj: Room = brain.getRoom(room);
+		let brain = createBrain();
+		let roomObj = brain.getRoom(room);
 
 		if (!roomObj) {
 			createRoom(room);
@@ -822,8 +822,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function holdRoom(room: string, message: string): Error {
-		var brain: Brain = createBrain();
-		var roomObj: Room = brain.getRoom(room);
+		let brain = createBrain();
+		let roomObj = brain.getRoom(room);
 
 		if (!roomObj) {
 			createRoom(room);
@@ -837,14 +837,14 @@ module.exports = (robot: Robot) => {
 	}
 
 	function driveSession(room: string, userName: string) {
-		var sessionIndex = findSessionIndexWithUser(room, userName);
+		let sessionIndex = findSessionIndexWithUser(room, userName);
 
 		if (sessionIndex === -1) {
 			return new NotInSessionError();
 		}
 
-		var session: SessionData = createBrain().getRoomSessionAtIndex(room, sessionIndex);
-		var sess: Session = sessionObj(session);
+		let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
+		let sess = sessionObj(session);
 
 		if (sess.isUserLeader(userName)) {
 			return new NotChangedError();
@@ -856,11 +856,11 @@ module.exports = (robot: Robot) => {
 	}
 
 	function getTopicString(room: string): string {
-		var brain: Brain = createBrain();
-		var roomObj: Room = brain.getRoom(room);
-		var roomSessions: SessionData[] = createBrain().getRoomSessions(room);
+		let brain = createBrain();
+		let roomObj = brain.getRoom(room);
+		let roomSessions = createBrain().getRoomSessions(room);
 
-		var topic: string[] = [];
+		let topic: string[] = [];
 
 		if (roomObj.isHolded()) {
 			let holdMessage = roomObj.getHoldMessage();
@@ -873,14 +873,13 @@ module.exports = (robot: Robot) => {
 	}
 
 	function kickUser(room: string, leader: string, userName: string): Error {
-		var index: number = findSessionIndexWithUser(room, leader);
-		var session: SessionData;
+		let index = findSessionIndexWithUser(room, leader);
 
 		if (index === -1) {
 			return new NotInSessionError();
 		}
 
-		session = createBrain().getRoomSessionAtIndex(room, index);
+		let session = createBrain().getRoomSessionAtIndex(room, index);
 		if (!hasPermission(leader, createAction('kick'), sessionObj(session))) {
 			return new PermissionDeniedError();
 		}
@@ -893,14 +892,14 @@ module.exports = (robot: Robot) => {
 	}
 
 	function setMessage(room: string, userName: string, message: string): Error {
-		var sessionIndex: number = findSessionIndexWithUser(room, userName);
+		let sessionIndex = findSessionIndexWithUser(room, userName);
 
 		if (sessionIndex === -1) {
 			return new NotInSessionError();
 		}
 
-		var session: SessionData = createBrain().getRoomSessionAtIndex(room, sessionIndex);
-		var sess: Session = sessionObj(session);
+		let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
+		let sess = sessionObj(session);
 
 		if (sess.getMessage() === message) {
 			return new NotChangedError();
@@ -914,7 +913,7 @@ module.exports = (robot: Robot) => {
 
 	// LOGICS END
 
-	function extractMsgDetails(msg: Msg) {
+	function extractMsgDetails(msg: Msg): MsgDetails {
 		return {
 			room: msg.message.room,
 			userName: msg.message.user.name
@@ -923,8 +922,8 @@ module.exports = (robot: Robot) => {
 
 	// COMMAND CALLBACKS
 	function onJoinCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
-		var err: Error = addSession(room, userName);
+		let {room, userName} = extractMsgDetails(msg);
+		let err = addSession(room, userName);
 
 		if (err) {
 			msg.reply(err.message);
@@ -935,9 +934,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onNevermindCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = leaveSession(room, userName);
+		let err = leaveSession(room, userName);
 
 		if (err && err.name !== 'NotInSessionError') {
 			msg.reply(err.message);
@@ -948,10 +947,10 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onJoinWithCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
-		var leader: string = msg.match[1];
+		let {room, userName} = extractMsgDetails(msg);
+		let leader = msg.match[1];
 
-		var err: Error = joinSession(room, leader, userName);
+		let err = joinSession(room, leader, userName);
 
 		if (err) {
 			msg.reply(err.message);
@@ -962,11 +961,11 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onJoinBeforeCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
-		var refUser: string = msg.match[1];
+		let {room, userName} = extractMsgDetails(msg);
+		let refUser = msg.match[1];
 
-		var sessionIndex: number = findSessionIndexWithUser(room, refUser);
-		var err: Error;
+		let sessionIndex = findSessionIndexWithUser(room, refUser);
+		let err: Error;
 
 		if (sessionIndex === -1) {
 			err = new NotInSessionError();
@@ -984,16 +983,16 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onDoneCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = finish(room, userName);
+		let err = finish(room, userName);
 
 		if (err) {
 			if (err.name !== 'NotInSessionError') {
 				msg.reply(err.message);
 			}
 		} else {
-			var nextSession: SessionData = createBrain().getRoomSessionAtIndex(room, 0);
+			let nextSession = createBrain().getRoomSessionAtIndex(room, 0);
 
 			if (nextSession) {
 				msg.send(nextSession.users.map(createUser).map(invoke('getName')).join(', ') + ': You are up!');
@@ -1004,9 +1003,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onAtCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = setRoomState(room, userName, msg.match[1]);
+		let err = setRoomState(room, userName, msg.match[1]);
 
 		robot.logger.debug('set room state', err);
 
@@ -1021,11 +1020,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onGoodCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
-		var session: SessionData, sess: Session;
-		var sessionIndex: number;
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = setUserState(room, userName, UserState.Good);
+		let err = setUserState(room, userName, UserState.Good);
 
 		if (err) {
 			if (err.name !== 'NotChangedError') {
@@ -1033,11 +1030,11 @@ module.exports = (robot: Robot) => {
 				robot.logger.error('.good:', err);
 			}
 		} else {
-			sessionIndex = findSessionIndexWithUser(room, userName);
+			let sessionIndex = findSessionIndexWithUser(room, userName);
 
-			session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
+			let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
 
-			sess = sessionObj(session);
+			let sess = sessionObj(session);
 
 			if (sess.isAllUserGood()) {
 				msg.send(getSortedSessionUsers(sess).map(invoke('getName')).join(', ') + ': Everyone is ready');
@@ -1047,9 +1044,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onUhOhCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = setUserState(room, userName, UserState.Uhoh);
+		let err = setUserState(room, userName, UserState.Uhoh);
 
 		if (err) {
 			if (err.name !== 'NotChangedError') {
@@ -1063,10 +1060,10 @@ module.exports = (robot: Robot) => {
 
 	function onHoldCommand(msg: Msg): void {
 		robot.logger.debug('COMMANBD HOLD');
-		var room: string = msg.message.room;
-		var message: string = msg.match[1];
+		let room = msg.message.room;
+		let message = msg.match[1];
 
-		var err: Error = holdRoom(room, message);
+		let err = holdRoom(room, message);
 
 		if (err) {
 			msg.reply(err.message);
@@ -1077,9 +1074,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onUnholdCommand(msg: Msg): void {
-		var room: string = msg.message.room;
+		let room = msg.message.room;
 
-		var err: Error = unholdRoom(room);
+		let err = unholdRoom(room);
 
 		if (err) {
 			if (err.name !== 'NotChangedError') {
@@ -1092,15 +1089,15 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onSessionsCommand(msg: Msg): void {
-		var room: string = msg.message.room;
-		var brain: Brain = createBrain();
+		let room = msg.message.room;
+		let brain = createBrain();
 
-		var roomSessions: SessionData[] = brain.getRoomSessions(room);
+		let roomSessions = brain.getRoomSessions(room);
 
 		if (roomSessions.length) {
 			msg.send(roomSessions.map((session): string => {
-				var msg = [];
-				var sess = sessionObj(session);
+				let msg: string[] = [];
+				let sess = sessionObj(session);
 
 				if (sess.getState()) {
 					msg.push('<' + sess.getState() + '>');
@@ -1118,9 +1115,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onKickCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = kickUser(room, userName, msg.match[1]);
+		let err = kickUser(room, userName, msg.match[1]);
 
 		if (err && err.name !== 'NotInSessionError') {
 			msg.reply(err.message);
@@ -1131,9 +1128,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onMessageCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = setMessage(room, userName, msg.match[1]);
+		let err = setMessage(room, userName, msg.match[1]);
 
 		if (err ) {
 			if (err.name !== 'NotChangedError') {
@@ -1150,9 +1147,9 @@ module.exports = (robot: Robot) => {
 	}
 
 	function onDriveCommand(msg: Msg): void {
-		var {room, userName} = extractMsgDetails(msg);
+		let {room, userName} = extractMsgDetails(msg);
 
-		var err: Error = driveSession(room, userName);
+		let err = driveSession(room, userName);
 
 		if (err) {
 			if (err instanceof NotChangedError) {
