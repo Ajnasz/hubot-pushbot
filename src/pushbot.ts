@@ -44,7 +44,11 @@
 /// <reference path="../typings/node.d.ts" />
 /// <reference path="../typings/hubotrobot.d.ts" />
 
-function findIndex(array: any[], test: Function) {
+interface TesterFunc {
+	<T>(param: T): boolean;
+}
+
+function findIndex<T>(array: T[], test: TesterFunc) {
 	let index = -1;
 	for (let i = 0, rl = array.length; i < rl; i++) {
 		if (test(array[i])) {
