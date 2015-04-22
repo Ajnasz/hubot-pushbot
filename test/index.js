@@ -1200,6 +1200,35 @@ describe('pushbot', function () {
 			});
 
 		});
+		describe('when the user is joined to session', function () {
+			beforeEach(function () {
+				var cmd, msg;
+				cmd = '.join';
+				msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+			});
+			afterEach(function () {
+			});
+
+			describe('user tries to finish a session', function () {
+				var cmd, msg;
+				beforeEach(function () {
+					cmd = '.done';
+					msg = createMessage(robot, cmd, room, userName, userId);
+				});
+				afterEach(function () {
+					cmd = null;
+					msg = null;
+				});
+
+				it('should remove the session', function () {
+					callCommand(findCommand(robot, cmd), msg);
+
+					var roomSessions = getRoomSessions(robot, room);
+					expect(roomSessions).to.have.length(0);
+				});
+			});
+		});
 		describe('when hold is set', function () {
 			beforeEach(function () {
 				var cmd, msg;

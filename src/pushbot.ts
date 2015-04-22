@@ -193,18 +193,35 @@ function createUser(userData: UserData) {
 }
 
 interface Action {
-	name: string;
 	requireLeader(): boolean;
 	requireMembership(): boolean;
+	requireAllUserGood(): boolean;
 }
 
 class KickAction implements Action {
-	name: string = 'kick';
-	requireLeader(): boolean {
+	requireLeader() {
 		return false;
 	}
 
-	requireMembership(): boolean {
+	requireMembership() {
+		return false;
+	}
+
+	requireAllUserGood() {
+		return false;
+	}
+}
+
+class DoneAction implements Action {
+	requireLeader() {
+		return false;
+	}
+
+	requireMembership() {
+		return true;
+	}
+
+	requireAllUserGood() {
 		return false;
 	}
 }
@@ -213,6 +230,10 @@ function createAction(name: string): Action {
 	switch (name) {
 		case 'kick':
 			return new KickAction();
+			break;
+
+		case 'done':
+			return new DoneAction();
 			break;
 	}
 
@@ -371,6 +392,10 @@ class Session {
 		return this.getLeader() === userName;
 	}
 
+	isUserMember(userName: string): boolean {
+		return this.getUsers().some((user) => user.name === userName);
+	}
+
 	isAllUserGood(): boolean {
 		return this.getUsers().map(createUser).every(invoke('isGood'));
 	}
@@ -521,7 +546,15 @@ module.exports = (robot: Robot) => {
 			return false;
 		}
 
+		if (action.requireMembership() && !session.isUserMember(user)) {
+			return false;
+		}
+
 		return true;
+	}
+
+	function isUsersStateOk(action: Action, session: Session): boolean {
+		return !action.requireAllUserGood() || !session.isAllUserGood();
 	}
 
 	// HELPERS
@@ -748,16 +781,19 @@ module.exports = (robot: Robot) => {
 
 			let sess = sessionObj(session);
 
-			if (sess.getState() && !sess.isAllUserGood()) {
+			let action = createAction('done')
+
+			if (!hasPermission(userName, action, sess)) {
+				return new PermissionDeniedError();
+			}
+
+			if (!isUsersStateOk(action, sess)) {
 				let holdingUsers = sess.getUsers().map(createUser).filter((user) => {
-					return !user.isGood();
+					return user.isGood();
 				});
 				return new UsersNotReadyError(holdingUsers.map(invoke('getName')));
 			}
 
-			if (!sess.isUserLeader(userName)) {
-				return new PermissionDeniedError();
-			}
 			removeSession(room, sess.getLeader());
 
 			return null;
