@@ -64,17 +64,6 @@ function sessionObj(session): Session {
 	return new Session(session);
 }
 
-function findUserSessionIndex(session: SessionData, userName: string): number {
-	let index = -1;
-	let users = sessionObj(session).getUsers();
-
-	index = findIndex(users, (user): boolean => {
-		return createUser(user).getName() === userName;
-	});
-
-	return index;
-}
-
 function invoke(method) {
 	return (obj) => {
 		return obj[method]();
@@ -393,7 +382,7 @@ class Session {
 	}
 
 	isUserMember(userName: string): boolean {
-		return this.getUsers().some((user) => user.name === userName);
+		return this.getUsers().some((user) => createUser(user).getName() === userName);
 	}
 
 	isAllUserGood(): boolean {
@@ -408,6 +397,17 @@ class Session {
 		this.getUsers().map(createUser).forEach((user) => {
 			user.setState(UserState.Waiting);
 		});
+	}
+
+	getUserIndex(userName: string): number {
+		let index = -1;
+		let users = this.getUsers();
+
+		index = findIndex(users, (user): boolean => {
+			return createUser(user).getName() === userName;
+		});
+
+		return index;
 	}
 }
 
@@ -488,7 +488,7 @@ class Room {
 		}
 
 		let index = findIndex(roomSessions, (session) => {
-			return findUserSessionIndex(session, userName) > -1;
+			return sessionObj(session).isUserMember(userName);
 		});
 
 		return index > -1;
@@ -676,7 +676,7 @@ module.exports = (robot: Robot) => {
 		roomSessions = brain.getRoomSessions(room);
 
 		return findIndex(roomSessions, (session): boolean => {
-			return findUserSessionIndex(session, userName) > -1;
+			return sessionObj(session).getUserIndex(userName) > -1;
 		});
 	}
 
@@ -688,18 +688,18 @@ module.exports = (robot: Robot) => {
 		let roomSessions: SessionData[] = brain.getRoomSessions(room);
 
 		let index: number = findIndex(roomSessions, (session): boolean => {
-			return findUserSessionIndex(session, userName) > -1;
+			return sessionObj(session).getUserIndex(userName) > -1;
 		});
 
 		if (brain.getRoom(room).isUserInSession(userName)) {
-			let session: SessionData = brain.getRoomSessionAtIndex(room, index), userIndex;
+			let session: SessionData = brain.getRoomSessionAtIndex(room, index);;
 			let sess: Session = sessionObj(session);
 
-			if (sess.isUserLeader(userName) && findUserSessionIndex(session, userName) > 1) {
+			if (sess.isUserLeader(userName)) {
 				return new LeaderCanNotLeaveError();
 			}
 
-			userIndex = findUserSessionIndex(session, userName);
+			let userIndex = sess.getUserIndex(userName);
 
 			if (userIndex === -1) {
 				return new UserNotFoundError();
@@ -735,7 +735,7 @@ module.exports = (robot: Robot) => {
 
 		let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
 
-		if (findUserSessionIndex(session, user) > -1) {
+		if (sessionObj(session).getUserIndex(user) > -1) {
 			return new AlreadyInSessionError();
 		} else {
 			sessionObj(session).addUser(user);
@@ -749,9 +749,9 @@ module.exports = (robot: Robot) => {
 		if (index > -1) {
 			let brain = createBrain();
 			let session = brain.getRoomSessionAtIndex(room, index);
-			let userIndex = findUserSessionIndex(session, userName);
 
 			let sess = sessionObj(session);
+			let userIndex = sess.getUserIndex(userName);
 
 			if (createUser(sess.getUsers()[userIndex]).getState() === state) {
 				return new NotChangedError();
