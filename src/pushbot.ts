@@ -64,17 +64,6 @@ function sessionObj(session): Session {
 	return new Session(session);
 }
 
-function findUserSessionIndex(session: SessionData, userName: string): number {
-	let index = -1;
-	let users = sessionObj(session).getUsers();
-
-	index = findIndex(users, (user): boolean => {
-		return createUser(user).getName() === userName;
-	});
-
-	return index;
-}
-
 function invoke(method) {
 	return (obj) => {
 		return obj[method]();
@@ -193,18 +182,35 @@ function createUser(userData: UserData) {
 }
 
 interface Action {
-	name: string;
 	requireLeader(): boolean;
 	requireMembership(): boolean;
+	requireAllUserGood(): boolean;
 }
 
 class KickAction implements Action {
-	name: string = 'kick';
-	requireLeader(): boolean {
+	requireLeader() {
 		return false;
 	}
 
-	requireMembership(): boolean {
+	requireMembership() {
+		return false;
+	}
+
+	requireAllUserGood() {
+		return false;
+	}
+}
+
+class DoneAction implements Action {
+	requireLeader() {
+		return false;
+	}
+
+	requireMembership() {
+		return true;
+	}
+
+	requireAllUserGood() {
 		return false;
 	}
 }
@@ -213,6 +219,10 @@ function createAction(name: string): Action {
 	switch (name) {
 		case 'kick':
 			return new KickAction();
+			break;
+
+		case 'done':
+			return new DoneAction();
 			break;
 	}
 
@@ -371,6 +381,10 @@ class Session {
 		return this.getLeader() === userName;
 	}
 
+	isUserMember(userName: string): boolean {
+		return this.getUsers().some((user) => createUser(user).getName() === userName);
+	}
+
 	isAllUserGood(): boolean {
 		return this.getUsers().map(createUser).every(invoke('isGood'));
 	}
@@ -383,6 +397,17 @@ class Session {
 		this.getUsers().map(createUser).forEach((user) => {
 			user.setState(UserState.Waiting);
 		});
+	}
+
+	getUserIndex(userName: string): number {
+		let index = -1;
+		let users = this.getUsers();
+
+		index = findIndex(users, (user): boolean => {
+			return createUser(user).getName() === userName;
+		});
+
+		return index;
 	}
 }
 
@@ -463,7 +488,7 @@ class Room {
 		}
 
 		let index = findIndex(roomSessions, (session) => {
-			return findUserSessionIndex(session, userName) > -1;
+			return sessionObj(session).isUserMember(userName);
 		});
 
 		return index > -1;
@@ -521,7 +546,15 @@ module.exports = (robot: Robot) => {
 			return false;
 		}
 
+		if (action.requireMembership() && !session.isUserMember(user)) {
+			return false;
+		}
+
 		return true;
+	}
+
+	function isUsersStateOk(action: Action, session: Session): boolean {
+		return !action.requireAllUserGood() || !session.isAllUserGood();
 	}
 
 	// HELPERS
@@ -544,12 +577,13 @@ module.exports = (robot: Robot) => {
 
 	function getUserListStr(users: User[]): string {
 		return users.map((user) => {
+			let userName = user.getName();
 			if (user.isGood()) {
-				return goodUserMarker + user.getName();
+				return `${goodUserMarker}${userName}`;
 			} else if (user.isHolding()) {
-				return holdingUserMarker + user.getName();
+				return `${holdingUserMarker}${userName}`;
 			} else {
-				return user.getName();
+				return userName;
 			}
 		}).join(' + ');
 	}
@@ -642,7 +676,7 @@ module.exports = (robot: Robot) => {
 		roomSessions = brain.getRoomSessions(room);
 
 		return findIndex(roomSessions, (session): boolean => {
-			return findUserSessionIndex(session, userName) > -1;
+			return sessionObj(session).getUserIndex(userName) > -1;
 		});
 	}
 
@@ -654,18 +688,18 @@ module.exports = (robot: Robot) => {
 		let roomSessions: SessionData[] = brain.getRoomSessions(room);
 
 		let index: number = findIndex(roomSessions, (session): boolean => {
-			return findUserSessionIndex(session, userName) > -1;
+			return sessionObj(session).getUserIndex(userName) > -1;
 		});
 
 		if (brain.getRoom(room).isUserInSession(userName)) {
-			let session: SessionData = brain.getRoomSessionAtIndex(room, index), userIndex;
+			let session: SessionData = brain.getRoomSessionAtIndex(room, index);;
 			let sess: Session = sessionObj(session);
 
-			if (sess.isUserLeader(userName) && findUserSessionIndex(session, userName) > 1) {
+			if (sess.isUserLeader(userName)) {
 				return new LeaderCanNotLeaveError();
 			}
 
-			userIndex = findUserSessionIndex(session, userName);
+			let userIndex = sess.getUserIndex(userName);
 
 			if (userIndex === -1) {
 				return new UserNotFoundError();
@@ -701,7 +735,7 @@ module.exports = (robot: Robot) => {
 
 		let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
 
-		if (findUserSessionIndex(session, user) > -1) {
+		if (sessionObj(session).getUserIndex(user) > -1) {
 			return new AlreadyInSessionError();
 		} else {
 			sessionObj(session).addUser(user);
@@ -715,9 +749,9 @@ module.exports = (robot: Robot) => {
 		if (index > -1) {
 			let brain = createBrain();
 			let session = brain.getRoomSessionAtIndex(room, index);
-			let userIndex = findUserSessionIndex(session, userName);
 
 			let sess = sessionObj(session);
+			let userIndex = sess.getUserIndex(userName);
 
 			if (createUser(sess.getUsers()[userIndex]).getState() === state) {
 				return new NotChangedError();
@@ -747,16 +781,19 @@ module.exports = (robot: Robot) => {
 
 			let sess = sessionObj(session);
 
-			if (sess.getState() && !sess.isAllUserGood()) {
+			let action = createAction('done')
+
+			if (!hasPermission(userName, action, sess)) {
+				return new PermissionDeniedError();
+			}
+
+			if (!isUsersStateOk(action, sess)) {
 				let holdingUsers = sess.getUsers().map(createUser).filter((user) => {
-					return !user.isGood();
+					return user.isGood();
 				});
 				return new UsersNotReadyError(holdingUsers.map(invoke('getName')));
 			}
 
-			if (!sess.isUserLeader(userName)) {
-				return new PermissionDeniedError();
-			}
 			removeSession(room, sess.getLeader());
 
 			return null;
