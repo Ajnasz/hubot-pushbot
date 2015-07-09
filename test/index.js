@@ -628,6 +628,15 @@ describe('pushbot', function () {
 			expect(getFirstRoomSession(robot, room)).to.have.property('message', message);
 		});
 
+		it('should accept non us characters', function () {
+			var message = 'This is a message ' + rand() + ' árvíztűrő tükörfúrógép';
+			var cmd = '.message ' + message;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(getFirstRoomSession(robot, room)).to.have.property('message', message);
+		});
+
 		describe('set topic', function () {
 			it('should add message to the topic', function () {
 				var message = 'This is a message ' + rand();

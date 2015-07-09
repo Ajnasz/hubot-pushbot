@@ -42,7 +42,10 @@
 /*eslint new-cap:false*/
 
 /// <reference path="../typings/node.d.ts" />
+/// <reference path="../typings/xregexp.d.ts" />
 /// <reference path="../typings/hubotrobot.d.ts" />
+
+var XRegExp = require('xregexp').XRegExp;
 
 interface TesterFunc {
 	<T>(param: T): boolean;
@@ -525,12 +528,12 @@ module.exports = (robot: Robot) => {
 		kick: ['kick'],
 		at: ['at'],
 		done: ['done'],
-		drive: ['drive'],
+		drive: ['drive', 'lead'],
 		sessions: ['sessions'],
 		clearplease: ['clearplease']
 	};
 
-	const messageRegexp: string = '[\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+',
+	const messageRegexp: string = '[\\p{Latin}\\p{Common}\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+',
 		userNameRegexp: string = '[\\w_-]+',
 		stateNameRegexp: string = userNameRegexp;
 
@@ -1206,9 +1209,9 @@ module.exports = (robot: Robot) => {
 
 	function createCommandRegexp(commands: CommandAlias, args?: string): RegExp {
 		if (args) {
-			return new RegExp('^\\' + bot + '(?:' + commands.join('|') + ') (' + args + ')$');
+			return new XRegExp('^\\' + bot + '(?:' + commands.join('|') + ') (' + args + ')\s*$');
 		} else {
-			return new RegExp('^\\' + bot + '(?:' + commands.join('|') + ')$');
+			return new XRegExp('^\\' + bot + '(?:' + commands.join('|') + ')\s*$');
 		}
 	}
 

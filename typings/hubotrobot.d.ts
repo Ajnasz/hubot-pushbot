@@ -1,3 +1,5 @@
+declare type Callback = (msg: Msg) => void;
+
 declare class PushbotBrainData {
 	pushbot: Object
 }
@@ -16,8 +18,8 @@ declare class Logger {
 declare class Robot {
 	brain: HubotBrain;
 	logger: Logger;
-	hear(command: RegExp, callback: Function): void;
-	respond(command: RegExp, callback: Function): void;
+	hear(command: RegExp, callback: Callback): void;
+	respond(command: RegExp, callback: Callback): void;
 }
 
 declare class MsgUser {
