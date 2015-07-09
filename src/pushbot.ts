@@ -43,146 +43,13 @@
 
 /// <reference path="../typings/node.d.ts" />
 /// <reference path="../typings/xregexp.d.ts" />
-/// <reference path="../typings/hubotrobot.d.ts" />
+/// <reference path="PushbotErrors.ts" />
+/// <reference path="Session.ts" />
+/// <reference path="Room.ts" />
+/// <reference path="Brain.ts" />
+/// <reference path="util.ts" />
 
 var XRegExp = require('xregexp').XRegExp;
-
-interface TesterFunc {
-	<T>(param: T): boolean;
-}
-
-function findIndex<T>(array: T[], test: TesterFunc) {
-	let index = -1;
-	for (let i = 0, rl = array.length; i < rl; i++) {
-		if (test(array[i])) {
-			index = i;
-			break;
-		}
-	}
-
-	return index;
-}
-
-function sessionObj(session): Session {
-	return new Session(session);
-}
-
-function invoke(method) {
-	return (obj) => {
-		return obj[method]();
-	}
-}
-
-
-class PushbotError implements Error {
-	public name: string;
-	public message: string;
-	public stack: string;
-	constructor() {
-		this.stack = (<any>new Error()).stack;
-	}
-}
-
-class NotInSessionError extends PushbotError {
-	public name: string = 'NotInSessionError';
-	public message: string = 'User not found in session';
-}
-
-class NotLeadingError extends PushbotError {
-	public name: string = 'NotLeadingError';
-	public message: string = 'You are not leading any session';
-}
-
-class UserNotKickableError extends PushbotError {
-	public name: string = 'UserNotKickable';
-	public message: string = 'You can not kick user';
-}
-
-class AlreadyInSessionError extends PushbotError {
-	public name: string = 'AlreadyInSessionError';
-	public message: string = 'User already participating in session';
-}
-
-class PermissionDeniedError extends PushbotError {
-	public name: string = 'PermissionDeniedError';
-	public message: string = 'You have no permission to perform the action';
-}
-
-class UsersNotReadyError extends PushbotError {
-	public name: string = 'UsersNotReadyError';
-	constructor(users?: string[]) {
-		super()
-		if (users && users.length) {
-			this.message = 'Users are not ready: ' + users.join(', ');
-		} else {
-			this.message = 'Users are not ready';
-		}
-	}
-}
-
-class UserNotFoundError extends PushbotError {
-	public name: string = 'UserNotFoundError';
-	public message: string = 'User not found';
-}
-
-class LeaderCanNotLeaveError extends PushbotError {
-	public name: string = 'LeaderCanNotLeaveError';
-	public message: string = 'Leader can not leave the session';
-}
-
-class NotChangedError extends PushbotError {
-	public name: string = 'NotChangedError';
-	public message: string = 'Value not changed';
-}
-
-class RoomHoldedError extends PushbotError {
-	public name: string = 'RoomHoldedError';
-	public message: string = 'Room holded';
-}
-
-enum UserState { Good, Uhoh, Waiting }
-
-interface UserData {
-	name: string;
-	state: UserState;
-}
-
-class User {
-	private name: string;
-	private state: UserState;
-	private __ref: UserData;
-
-	constructor(userData: UserData) {
-		this.name = userData.name;
-		this.state = userData.state;
-		this.__ref = userData;
-	}
-
-	getName(): string {
-		return this.name;
-	}
-
-	getState (): UserState {
-		return this.state;
-	}
-
-	setState(state): void {
-		this.__ref.state = state;
-		this.state = state;
-	}
-
-	isGood(): boolean {
-		return this.getState() === UserState.Good;
-	}
-
-	isHolding(): boolean {
-		return this.getState() === UserState.Uhoh;
-	}
-}
-
-function createUser(userData: UserData) {
-	return new User(userData);
-}
 
 interface Action {
 	requireLeader(): boolean;
@@ -232,191 +99,9 @@ function createAction(name: string): Action {
 	return null;
 }
 
-class Brain {
-	private data: Object;
-	constructor(robot: Robot) {
-		if (!robot.brain.data.pushbot) {
-			robot.brain.data.pushbot = Object.create(null);
-		}
-		this.data = robot.brain.data.pushbot;
-	}
-
-	getRooms(): Object {
-		return this.data;
-	}
-
-	getRoom (room: string): Room {
-		let roomObj = this.getRooms()[room];
-
-		if (roomObj) {
-			return new Room(roomObj);
-		}
-
-		return null;
-	}
-
-	getRoomSessions (room: string): SessionData[] {
-		let roomData = this.getRoom(room);
-		return roomData && roomData.getSessions();
-	}
-
-	hasSessions (room: string): boolean {
-		let roomSessions = this.getRoomSessions(room);
-
-		return roomSessions && roomSessions.length > 0;
-	}
-
-	setRoomData (room: string): void {
-		this.getRooms()[room] = {
-			holded: false,
-			sessions: []
-		};
-	}
-
-	setRoomSessions (room: string, sessions: SessionData[]): void {
-		let roomData = this.getRoom(room);
-
-		if (!roomData) {
-			this.setRoomData(room);
-		}
-		this.getRoom(room).setSessions(sessions);
-	}
-
-	clearRoomSessions (room: string): void {
-		this.setRoomData(room);
-	}
-
-	setRoomSessionAtIndex (room: string, index: number, session: SessionData): void {
-		this.getRoomSessions(room)[index] = session;
-	}
-
-	getRoomSessionAtIndex (room: string, index: number): SessionData {
-		let rooms = this.getRoomSessions(room);
-
-		if (rooms && rooms.length > index) {
-			return rooms[index];
-		}
-
-		return null;
-	}
-
-}
-
-interface SessionUser {
-	name: string;
-	state: UserState;
-}
-
-interface SessionData {
-	state: string;
-	message: string;
-	leader: string;
-	users: SessionUser[];
-}
-
-class Session {
-	private leader: string;
-	private users: SessionUser[];
-	private state: string;
-	private message: string;
-	private holdMessage: string;
-	private __ref: SessionData;
-
-	constructor(session: SessionData) {
-		this.leader = session.leader;
-		this.state = session.state;
-		this.message = session.message;
-		this.users = session.users;
-
-		this.__ref = session;
-
-	}
-
-	getLeader(): string {
-		return this.leader;
-	}
-
-	getUsers(): SessionUser[] {
-		return this.users;
-	}
-
-	getState(): string {
-		return this.state;
-	}
-
-	getMessage(): string {
-		return this.message;
-	}
-
-	getHoldMessage(): string {
-		return this.holdMessage;
-	}
-
-	setState(state: string): void {
-		this.state = state;
-		this.__ref.state = state;
-	}
-
-	setMessage(message: string): void {
-		this.message = message;
-		this.__ref.message = message;
-	}
-
-	setLeader (leaderName: string): void {
-		this.leader = leaderName;
-		this.__ref.leader = leaderName;
-	}
-
-	addUser(userName: string): void {
-		this.getUsers().push({
-			name: userName,
-			state: UserState.Waiting
-		});
-	}
-
-	isLeaderJoined(): boolean {
-		return this.getUsers().some((user): boolean => {
-			return this.isUserLeader(createUser(user).getName());
-		});
-	}
-
-	isUserLeader(userName: string): boolean {
-		return this.getLeader() === userName;
-	}
-
-	isUserMember(userName: string): boolean {
-		return this.getUsers().some((user) => createUser(user).getName() === userName);
-	}
-
-	isAllUserGood(): boolean {
-		return this.getUsers().map(createUser).every(invoke('isGood'));
-	}
-
-	isAnyUserBad(): boolean {
-		return this.getUsers().map(createUser).some(invoke('isHolding'));
-	}
-
-	resetUsers(): void {
-		this.getUsers().map(createUser).forEach((user) => {
-			user.setState(UserState.Waiting);
-		});
-	}
-
-	getUserIndex(userName: string): number {
-		let index = -1;
-		let users = this.getUsers();
-
-		index = findIndex(users, (user): boolean => {
-			return createUser(user).getName() === userName;
-		});
-
-		return index;
-	}
-}
-
 const defaultMessage = '-';
 
-function createSession(leader: string): SessionData {
+function createSession(leader: string): Session.SessionData {
 	return {
 		leader: leader,
 		state: '',
@@ -425,77 +110,9 @@ function createSession(leader: string): SessionData {
 		message: defaultMessage,
 		users: [{
 			name: leader,
-			state: UserState.Waiting
+			state: User.UserState.Waiting
 		}]
 	};
-}
-
-interface RoomData {
-	sessions: SessionData[];
-	holdMessage: string;
-	holded: boolean;
-}
-
-class Room {
-	private sessions: SessionData[];
-	private holded: boolean;
-	private holdMessage: string;
-	private __ref: RoomData;
-
-	constructor(room: RoomData) {
-
-		this.sessions = room.sessions;
-		this.holdMessage = room.holdMessage;
-		this.holded = room.holded;
-
-		this.__ref = room;
-	}
-
-	getSessions() {
-		return this.sessions;
-	}
-
-	setSessions(sessions: SessionData[]): void {
-		this.sessions = sessions;
-		this.__ref.sessions = sessions;
-	}
-
-	isHolded(): boolean {
-		return this.holded;
-	}
-
-	hold(): void {
-		this.holded = true;
-		this.__ref.holded = true;
-	}
-
-	unhold(): void {
-		this.holded = false;
-		this.__ref.holded = false;
-	}
-
-	setHoldMessage(message: string): void {
-		this.holdMessage = message;
-		this.__ref.holdMessage = message;
-	}
-
-	getHoldMessage(): string {
-		return this.holdMessage;
-	}
-
-	isUserInSession(userName: string): boolean {
-		let roomSessions = this.getSessions();
-
-		if (!roomSessions) {
-			return false;
-		}
-
-		let index = findIndex(roomSessions, (session) => {
-			return sessionObj(session).isUserMember(userName);
-		});
-
-		return index > -1;
-	}
 }
 
 interface MsgDetails {
@@ -511,8 +128,8 @@ interface CommandAlias {
 module.exports = (robot: Robot) => {
 	'use strict';
 
-	function createBrain(): Brain {
-		return new Brain(robot);
+	function createBrain(): Brain.Brain {
+		return new Brain.Brain(robot);
 	}
 
 	let commands = {
@@ -544,7 +161,7 @@ module.exports = (robot: Robot) => {
 		holdingUserMarker: string = '✗';
 
 	// has permission a <user> to do <action> in <session>
-	function hasPermission(user: string, action: Action, session: Session): boolean {
+	function hasPermission(user: string, action: Action, session: Session.Session): boolean {
 		if (action.requireLeader() && user !== session.getLeader()) {
 			return false;
 		}
@@ -556,13 +173,13 @@ module.exports = (robot: Robot) => {
 		return true;
 	}
 
-	function isUsersStateOk(action: Action, session: Session): boolean {
+	function isUsersStateOk(action: Action, session: Session.Session): boolean {
 		return !action.requireAllUserGood() || !session.isAllUserGood();
 	}
 
 	// HELPERS
-	function getSortedSessionUsers(sess: Session): User[] {
-		let users = sess.getUsers().map(createUser);
+	function getSortedSessionUsers(sess: Session.Session): User.User[] {
+		let users = sess.getUsers().map(User.createUser);
 		let leader = sess.getLeader();
 
 		users.sort((a, b) => {
@@ -578,7 +195,7 @@ module.exports = (robot: Robot) => {
 		return users;
 	}
 
-	function getUserListStr(users: User[]): string {
+	function getUserListStr(users: User.User[]): string {
 		return users.map((user) => {
 			let userName = user.getName();
 			if (user.isGood()) {
@@ -591,8 +208,8 @@ module.exports = (robot: Robot) => {
 		}).join(' + ');
 	}
 
-	function getStateStrForSession(session: SessionData): string {
-		let sess = sessionObj(session);
+	function getStateStrForSession(session: Session.SessionData): string {
+		let sess = Session.sessionObj(session);
 		let msg: string[] = [];
 
 		if (sess.getMessage() && sess.getMessage() !== emptyMessage) {
@@ -659,8 +276,8 @@ module.exports = (robot: Robot) => {
 		let roomSessions = brain.getRoomSessions(room);
 		let index = -1;
 
-		index = findIndex(roomSessions, (session) => {
-			return sessionObj(session).isUserLeader(leader);
+		index = util.findIndex(roomSessions, (session) => {
+			return Session.sessionObj(session).isUserLeader(leader);
 		});
 
 		if (index > -1) {
@@ -670,7 +287,7 @@ module.exports = (robot: Robot) => {
 	}
 
 	function findSessionIndexWithUser(room: string, userName: string): number {
-		let brain: Brain = createBrain(), roomSessions;
+		let brain: Brain.Brain = createBrain(), roomSessions;
 
 		if (!brain.hasSessions(room)) {
 			return -1;
@@ -678,34 +295,34 @@ module.exports = (robot: Robot) => {
 
 		roomSessions = brain.getRoomSessions(room);
 
-		return findIndex(roomSessions, (session): boolean => {
-			return sessionObj(session).getUserIndex(userName) > -1;
+		return util.findIndex(roomSessions, (session): boolean => {
+			return Session.sessionObj(session).getUserIndex(userName) > -1;
 		});
 	}
 
 	function leaveSession(room: string, userName: string): Error {
 		createRoom(room);
 
-		let brain: Brain = createBrain();
+		let brain: Brain.Brain = createBrain();
 
-		let roomSessions: SessionData[] = brain.getRoomSessions(room);
+		let roomSessions: Session.SessionData[] = brain.getRoomSessions(room);
 
-		let index: number = findIndex(roomSessions, (session): boolean => {
-			return sessionObj(session).getUserIndex(userName) > -1;
+		let index: number = util.findIndex(roomSessions, (session): boolean => {
+			return Session.sessionObj(session).getUserIndex(userName) > -1;
 		});
 
 		if (brain.getRoom(room).isUserInSession(userName)) {
-			let session: SessionData = brain.getRoomSessionAtIndex(room, index);;
-			let sess: Session = sessionObj(session);
+			let session: Session.SessionData = brain.getRoomSessionAtIndex(room, index);;
+			let sess: Session.Session = Session.sessionObj(session);
 
 			if (sess.isUserLeader(userName)) {
-				return new LeaderCanNotLeaveError();
+				return new PushbotErrors.LeaderCanNotLeaveError();
 			}
 
 			let userIndex = sess.getUserIndex(userName);
 
 			if (userIndex === -1) {
-				return new UserNotFoundError();
+				return new PushbotErrors.UserNotFoundError();
 			}
 
 			let users = sess.getUsers();
@@ -723,7 +340,7 @@ module.exports = (robot: Robot) => {
 
 			return null;
 		} else {
-			return new NotInSessionError();
+			return new PushbotErrors.NotInSessionError();
 		}
 	}
 
@@ -733,31 +350,31 @@ module.exports = (robot: Robot) => {
 		let sessionIndex = findSessionIndexWithUser(room, refUser);
 
 		if (sessionIndex === -1) {
-			return new NotInSessionError();
+			return new PushbotErrors.NotInSessionError();
 		}
 
 		let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
 
-		if (sessionObj(session).getUserIndex(user) > -1) {
-			return new AlreadyInSessionError();
+		if (Session.sessionObj(session).getUserIndex(user) > -1) {
+			return new PushbotErrors.AlreadyInSessionError();
 		} else {
-			sessionObj(session).addUser(user);
+			Session.sessionObj(session).addUser(user);
 			return null;
 		}
 	}
 
-	function setUserState(room: string, userName: string, state: UserState): Error {
+	function setUserState(room: string, userName: string, state: User.UserState): Error {
 		let index: number = findSessionIndexWithUser(room, userName);
 
 		if (index > -1) {
 			let brain = createBrain();
 			let session = brain.getRoomSessionAtIndex(room, index);
 
-			let sess = sessionObj(session);
+			let sess = Session.sessionObj(session);
 			let userIndex = sess.getUserIndex(userName);
 
-			if (createUser(sess.getUsers()[userIndex]).getState() === state) {
-				return new NotChangedError();
+			if (User.createUser(sess.getUsers()[userIndex]).getState() === state) {
+				return new PushbotErrors.NotChangedError();
 			}
 
 			sess.getUsers()[userIndex].state = state;
@@ -766,15 +383,15 @@ module.exports = (robot: Robot) => {
 
 			return null;
 		} else {
-			return new NotInSessionError();
+			return new PushbotErrors.NotInSessionError();
 		}
 	}
 
 	function finish(room: string, userName: string): Error {
-		let brain: Brain = createBrain();
+		let brain: Brain.Brain = createBrain();
 
 		if (brain.getRoom(room).isHolded()) {
-			return new RoomHoldedError();
+			return new PushbotErrors.RoomHoldedError();
 		}
 
 		let index = findSessionIndexWithUser(room, userName);
@@ -782,19 +399,19 @@ module.exports = (robot: Robot) => {
 		if (index > -1) {
 			let session = createBrain().getRoomSessionAtIndex(room, index);
 
-			let sess = sessionObj(session);
+			let sess = Session.sessionObj(session);
 
 			let action = createAction('done')
 
 			if (!hasPermission(userName, action, sess)) {
-				return new PermissionDeniedError();
+				return new PushbotErrors.PermissionDeniedError();
 			}
 
 			if (!isUsersStateOk(action, sess)) {
-				let holdingUsers = sess.getUsers().map(createUser).filter((user) => {
+				let holdingUsers = sess.getUsers().map(User.createUser).filter((user) => {
 					return user.isGood();
 				});
-				return new UsersNotReadyError(holdingUsers.map(invoke('getName')));
+				return new PushbotErrors.UsersNotReadyError(holdingUsers.map(util.invoke('getName')));
 			}
 
 			removeSession(room, sess.getLeader());
@@ -802,14 +419,14 @@ module.exports = (robot: Robot) => {
 			return null;
 		}
 
-		return new NotInSessionError();
+		return new PushbotErrors.NotInSessionError();
 	}
 
 	function setRoomState(room: string, userName: string, state: string): Error {
 		let brain = createBrain();
 
 		if (brain.getRoom(room).isHolded()) {
-			return new RoomHoldedError();
+			return new PushbotErrors.RoomHoldedError();
 		}
 
 		let index: number = findSessionIndexWithUser(room, userName);
@@ -818,7 +435,7 @@ module.exports = (robot: Robot) => {
 
 		if (index !== -1) {
 			let session = brain.getRoomSessionAtIndex(room, index);
-			let sess = sessionObj(session);
+			let sess = Session.sessionObj(session);
 
 			/*
 			if (!sess.isUserLeader(userName)) {
@@ -827,11 +444,11 @@ module.exports = (robot: Robot) => {
 			*/
 
 			if (sess.isAnyUserBad()) {
-				return new UsersNotReadyError(sess.getUsers().map(createUser).map(invoke('getName')));
+				return new PushbotErrors.UsersNotReadyError(sess.getUsers().map(User.createUser).map(util.invoke('getName')));
 			}
 
 			if (sess.getState() === state) {
-				return new NotChangedError();
+				return new PushbotErrors.NotChangedError();
 			}
 
 			sess.setState(state);
@@ -842,7 +459,7 @@ module.exports = (robot: Robot) => {
 
 			return null;
 		} else {
-			return new NotLeadingError();
+			return new PushbotErrors.NotLeadingError();
 		}
 	}
 
@@ -856,7 +473,7 @@ module.exports = (robot: Robot) => {
 		}
 
 		if (!roomObj.isHolded()) {
-			return new NotChangedError();
+			return new PushbotErrors.NotChangedError();
 		}
 
 		roomObj.unhold();
@@ -884,17 +501,17 @@ module.exports = (robot: Robot) => {
 		let sessionIndex = findSessionIndexWithUser(room, userName);
 
 		if (sessionIndex === -1) {
-			return new NotInSessionError();
+			return new PushbotErrors.NotInSessionError();
 		}
 
 		let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
-		let sess = sessionObj(session);
+		let sess = Session.sessionObj(session);
 
 		if (sess.isUserLeader(userName)) {
-			return new NotChangedError();
+			return new PushbotErrors.NotChangedError();
 		}
 
-		sessionObj(session).setLeader(userName);
+		Session.sessionObj(session).setLeader(userName);
 
 		return null;
 	}
@@ -920,16 +537,16 @@ module.exports = (robot: Robot) => {
 		let index = findSessionIndexWithUser(room, leader);
 
 		if (index === -1) {
-			return new NotInSessionError();
+			return new PushbotErrors.NotInSessionError();
 		}
 
 		let session = createBrain().getRoomSessionAtIndex(room, index);
-		if (!hasPermission(leader, createAction('kick'), sessionObj(session))) {
-			return new PermissionDeniedError();
+		if (!hasPermission(leader, createAction('kick'), Session.sessionObj(session))) {
+			return new PushbotErrors.PermissionDeniedError();
 		}
 
 		if (leader === userName) {
-			return new UserNotKickableError();
+			return new PushbotErrors.UserNotKickableError();
 		}
 
 		return leaveSession(room, userName);
@@ -939,14 +556,14 @@ module.exports = (robot: Robot) => {
 		let sessionIndex = findSessionIndexWithUser(room, userName);
 
 		if (sessionIndex === -1) {
-			return new NotInSessionError();
+			return new PushbotErrors.NotInSessionError();
 		}
 
 		let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
-		let sess = sessionObj(session);
+		let sess = Session.sessionObj(session);
 
 		if (sess.getMessage() === message) {
-			return new NotChangedError();
+			return new PushbotErrors.NotChangedError();
 		}
 
 		sess.setMessage(message);
@@ -982,7 +599,7 @@ module.exports = (robot: Robot) => {
 
 		let err = leaveSession(room, userName);
 
-		if (err && !(err instanceof NotInSessionError)) {
+		if (err && !(err instanceof PushbotErrors.NotInSessionError)) {
 			msg.reply(err.message);
 			robot.logger.error('.nevermind:', err);
 		} else {
@@ -1012,7 +629,7 @@ module.exports = (robot: Robot) => {
 		let err: Error;
 
 		if (sessionIndex === -1) {
-			err = new NotInSessionError();
+			err = new PushbotErrors.NotInSessionError();
 		} else {
 			err = insertSession(room, userName, sessionIndex);
 		}
@@ -1032,14 +649,14 @@ module.exports = (robot: Robot) => {
 		let err = finish(room, userName);
 
 		if (err) {
-			if (!(err instanceof NotInSessionError)) {
+			if (!(err instanceof PushbotErrors.NotInSessionError)) {
 				msg.reply(err.message);
 			}
 		} else {
 			let nextSession = createBrain().getRoomSessionAtIndex(room, 0);
 
 			if (nextSession) {
-				msg.send(nextSession.users.map(createUser).map(invoke('getName')).join(', ') + ': You are up!');
+				msg.send(nextSession.users.map(User.createUser).map(util.invoke('getName')).join(', ') + ': You are up!');
 			}
 
 			setTopic(msg);
@@ -1054,7 +671,7 @@ module.exports = (robot: Robot) => {
 		robot.logger.debug('set room state', err);
 
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (!(err instanceof PushbotErrors.NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.at:', err);
 			}
@@ -1066,10 +683,10 @@ module.exports = (robot: Robot) => {
 	function onGoodCommand(msg: Msg): void {
 		let {room, userName} = extractMsgDetails(msg);
 
-		let err = setUserState(room, userName, UserState.Good);
+		let err = setUserState(room, userName, User.UserState.Good);
 
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (!(err instanceof PushbotErrors.NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.good:', err);
 			}
@@ -1078,10 +695,10 @@ module.exports = (robot: Robot) => {
 
 			let session = createBrain().getRoomSessionAtIndex(room, sessionIndex);
 
-			let sess = sessionObj(session);
+			let sess = Session.sessionObj(session);
 
 			if (sess.isAllUserGood()) {
-				msg.send(getSortedSessionUsers(sess).map(invoke('getName')).join(', ') + ': Everyone is ready');
+				msg.send(getSortedSessionUsers(sess).map(util.invoke('getName')).join(', ') + ': Everyone is ready');
 			}
 			setTopic(msg);
 		}
@@ -1090,10 +707,10 @@ module.exports = (robot: Robot) => {
 	function onUhOhCommand(msg: Msg): void {
 		let {room, userName} = extractMsgDetails(msg);
 
-		let err = setUserState(room, userName, UserState.Uhoh);
+		let err = setUserState(room, userName, User.UserState.Uhoh);
 
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (!(err instanceof PushbotErrors.NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.uhoh:', err);
 			}
@@ -1123,7 +740,7 @@ module.exports = (robot: Robot) => {
 		let err = unholdRoom(room);
 
 		if (err) {
-			if (!(err instanceof NotChangedError)) {
+			if (!(err instanceof PushbotErrors.NotChangedError)) {
 				msg.reply(err.message);
 				robot.logger.error('.unhold:', err);
 			}
@@ -1141,7 +758,7 @@ module.exports = (robot: Robot) => {
 		if (roomSessions.length) {
 			msg.send(roomSessions.map((session): string => {
 				let msg: string[] = [];
-				let sess = sessionObj(session);
+				let sess = Session.sessionObj(session);
 
 				if (sess.getState()) {
 					msg.push('<' + sess.getState() + '>');
@@ -1163,7 +780,7 @@ module.exports = (robot: Robot) => {
 
 		let err = kickUser(room, userName, msg.match[1]);
 
-		if (err && !(err instanceof NotInSessionError)) {
+		if (err && !(err instanceof PushbotErrors.NotInSessionError)) {
 			msg.reply(err.message);
 			robot.logger.error('.kick:', err);
 		} else {
@@ -1177,7 +794,7 @@ module.exports = (robot: Robot) => {
 		let err = setMessage(room, userName, msg.match[1]);
 
 		if (err ) {
-			if (!(err instanceof NotChangedError)) {
+			if (!(err instanceof PushbotErrors.NotChangedError)) {
 				msg.reply(err.message);
 			}
 		} else {
@@ -1196,7 +813,7 @@ module.exports = (robot: Robot) => {
 		let err = driveSession(room, userName);
 
 		if (err) {
-			if (err instanceof NotChangedError) {
+			if (err instanceof PushbotErrors.NotChangedError) {
 				return;
 			}
 

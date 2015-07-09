@@ -31,8 +31,8 @@
     }
   ],
   "scripts": {
-    "test": "$(npm bin)/tsc -t ES5 src/pushbot.ts && $(npm bin)/mocha --ui bdd",
-    "install": "$(npm bin)/tsc -t ES5 src/pushbot.ts"
+    "test": "$(npm bin)/tsc --out src/pushbot.js -t ES5 src/pushbot.ts && $(npm bin)/mocha --ui bdd",
+    "install": "$(npm bin)/tsc --out src/pushbot.js -t ES5 src/pushbot.ts"
   },
   "engines": {
     "node": ">= 0.10.x"
