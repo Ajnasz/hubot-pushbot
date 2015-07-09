@@ -690,6 +690,15 @@ describe('pushbot', function () {
 
 			expect(getFirstRoomSession(robot, room)).to.have.property('state', state);
 		});
+
+		it('should accept non us characters', function () {
+			var state = 'árvíztűrés';
+			var cmd = '.at ' + state;
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(getFirstRoomSession(robot, room)).to.have.property('state', state);
+		});
 	});
 	describe('.done', function () {
 		beforeEach(function () {

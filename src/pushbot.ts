@@ -535,7 +535,7 @@ module.exports = (robot: Robot) => {
 
 	const messageRegexp: string = '[\\p{Latin}\\p{Common}\\w\'"(){}\\[\\]+*&%$#@~<>=/\\\\ .:;!?_-]+',
 		userNameRegexp: string = '[\\w_-]+',
-		stateNameRegexp: string = userNameRegexp;
+		stateNameRegexp: string = '[\\p{Latin}\\p{Common}\\w_-]+';
 
 	const emptyMessage: string = '-';
 
