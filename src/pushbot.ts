@@ -43,6 +43,7 @@
 
 /// <reference path="../typings/node.d.ts" />
 /// <reference path="../typings/xregexp.d.ts" />
+/// <reference path="Action.ts" />
 /// <reference path="PushbotErrors.ts" />
 /// <reference path="Session.ts" />
 /// <reference path="Room.ts" />
@@ -50,40 +51,6 @@
 /// <reference path="util.ts" />
 
 var XRegExp = require('xregexp').XRegExp;
-
-interface Action {
-	requireLeader(): boolean;
-	requireMembership(): boolean;
-	requireAllUserGood(): boolean;
-}
-
-class KickAction implements Action {
-	requireLeader() {
-		return false;
-	}
-
-	requireMembership() {
-		return false;
-	}
-
-	requireAllUserGood() {
-		return false;
-	}
-}
-
-class DoneAction implements Action {
-	requireLeader() {
-		return false;
-	}
-
-	requireMembership() {
-		return true;
-	}
-
-	requireAllUserGood() {
-		return false;
-	}
-}
 
 function createAction(name: string): Action {
 	switch (name) {

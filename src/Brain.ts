@@ -1,7 +1,6 @@
 /// <reference path="Room.ts" />
 /// <reference path="../typings/hubotrobot.d.ts" />
 
-
 module Brain {
 	export class Brain {
 		private data: Object;

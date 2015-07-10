@@ -20,6 +20,4 @@ module util {
 			return obj[method]();
 		}
 	}
-
-
 }

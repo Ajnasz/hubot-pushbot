@@ -43,5 +43,4 @@ module User {
 	export function createUser(userData: UserData) {
 		return new User(userData);
 	}
-
 }
