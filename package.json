@@ -2,7 +2,10 @@
   "name": "hubot-pushbot",
   "version": "0.6.2",
   "description": "PushBot implementation for hubot which is: \"PushBot is an IRC bot that manages the topic in an IRC channel that has a push train.\"",
-  "main": "index..js",
+  "main": "index.js",
+  "typescript": {
+	"main": "index.ts"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Ajnasz/hubot-pushbot"
@@ -31,8 +34,8 @@
     }
   ],
   "scripts": {
-    "test": "$(npm bin)/tsc --out src/pushbot.js -t ES5 src/pushbot.ts && $(npm bin)/mocha --ui bdd",
-    "install": "$(npm bin)/tsc --out src/pushbot.js -t ES5 src/pushbot.ts"
+    "test": "$(npm bin)/tsc --module commonjs --out src/pushbot.js -t ES5 src/pushbot.ts && $(npm bin)/mocha --ui bdd",
+    "install": "$(npm bin)/tsc --module commonjs -t ES5 index.ts && $(npm bin)/tsc --module commonjs --out src/pushbot.js -t ES5 src/pushbot.ts"
   },
   "engines": {
     "node": ">= 0.10.x"
