@@ -793,9 +793,9 @@ module.exports = (robot: Robot) => {
 
 	function createCommandRegexp(commands: CommandAlias, args?: string): RegExp {
 		if (args) {
-			return new XRegExp('^\\' + bot + '(?:' + commands.join('|') + ') (' + args + ')\s*$');
+			return new XRegExp('^\\' + bot + '(?:' + commands.join('|') + ') (' + args + ')\\s*$');
 		} else {
-			return new XRegExp('^\\' + bot + '(?:' + commands.join('|') + ')\s*$');
+			return new XRegExp('^\\' + bot + '(?:' + commands.join('|') + ')\\s*$');
 		}
 	}
 

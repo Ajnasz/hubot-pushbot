@@ -228,6 +228,18 @@ describe('pushbot', function () {
 			expect(roomSessions).to.have.length(2);
 		});
 
+		it('should run the command even if with whitespace on the end', function () {
+			expect(robot.brain.data.pushbot[room]).to.be.an('undefined');
+
+			var cmd = '.join ';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(robot.brain.data.pushbot).to.be.an('object');
+			expect(robot.brain.data.pushbot[room]).to.be.an('object');
+			expect(robot.brain.data.pushbot[room].sessions).to.be.an('array');
+		});
+
 		describe('set topic', function () {
 			it('should add username to room topic', function () {
 				var cmd = '.join';
@@ -302,6 +314,15 @@ describe('pushbot', function () {
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room).users[1]).to.have.property('name', newUserName);
+		});
+
+		it('should run the command even with whitespace on the end', function () {
+			var cmd = '.join with ' + userName + '\t';
+			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(getFirstRoomSession(robot, room).users).to.have.length(2);
 		});
 
 		describe('set topic', function () {
