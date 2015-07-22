@@ -35,7 +35,7 @@
   ],
   "scripts": {
     "test": "$(npm bin)/tsc --module commonjs --out src/pushbot.js -t ES5 src/pushbot.ts && $(npm bin)/mocha --ui bdd",
-    "install": "$(npm bin)/tsc --module commonjs -t ES5 index.ts && $(npm bin)/tsc --module commonjs --out src/pushbot.js -t ES5 src/pushbot.ts"
+    "install": "$(npm bin)/tsc --module commonjs -t ES5 index.ts && $(npm bin)/tsc --module commonjs --out src/pushbot-out.js -t ES5 src/pushbot.ts && cat COMMANDS.txt src/pushbot-out.js > src/pushbot.js && rm src/pushbot-out.js"
   },
   "engines": {
     "node": ">= 0.10.x"

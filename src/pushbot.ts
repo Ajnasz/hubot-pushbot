@@ -1,23 +1,3 @@
-// Description:
-//   Pushbot for hubot
-//
-// Commands:
-//   .join - Starts a pushbot session
-//   .join before <username> - Starts a new pushbot session and moves before users's session
-//   .join with <username> - Joins to a pushbot session
-//   .hold <message> - Hold session, won't allow to change state or make it done
-//   .unhold - Unhold session
-//   .(uhoh|notgood|bad|fuck|fucked) - Mark yourself as not-all-good in the current push state
-//   .(good|ok|in|go|great) - Mark yourself as all-good in the current push state
-//   .(nm|nevermind|leave) - Hop out of queue
-//   .message <message text> - Set session message
-//   .kick <user> - Kicks user from session
-//   .at <statename> - Changes session state
-//   .done - Finishes session
-//   .(drive|lead) - Take over leadership of session
-//   .sessions - List sessions
-//   .clearplease - Remove all sessions (all means all, not only for the room, but from the entire bot)
-
 // The MIT License (MIT)
 //
 // Copyright (c) 2015 Lajos Koszti
