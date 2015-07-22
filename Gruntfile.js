@@ -13,6 +13,12 @@ module.exports = function (grunt) {
 				dest: 'src/pushbot-out.js',
 				target: 'ES5',
 				module: 'commonjs'
+			},
+			index: {
+				src: 'index.ts',
+				dest: 'index.js',
+				target: 'ES5',
+				module: 'commonjs'
 			}
 		},
 		concat: {
