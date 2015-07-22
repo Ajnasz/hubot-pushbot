@@ -1,6 +1,7 @@
 /*jshint node:true*/
 /*global describe, it, beforeEach, afterEach*/
 
+'use strict';
 var expect = require('chai').expect;
 var sinon = require('sinon');
 
@@ -13,14 +14,12 @@ var UserStates = {
 };
 
 function rand() {
-	'use strict';
 	return Math.round(Math.random() * 10000000);
 }
 
 
 var robotProto = {
 	hear: function (regexp, cb) {
-		'use strict';
 		this.__commands.push({
 			regexp: regexp,
 			cb: cb
@@ -33,7 +32,6 @@ var robotProto = {
 	brain: {
 		data: null,
 		on: function (ev, cb) {
-			'use strict';
 			cb();
 		}
 	}
@@ -57,7 +55,6 @@ var msgProto = {
 };
 
 function createMsg(item, message, room, userName, userId) {
-	'use strict';
 	var msg = Object.create(msgProto);
 
 	msg.match = message.match(item.regexp);
@@ -69,7 +66,6 @@ function createMsg(item, message, room, userName, userId) {
 }
 
 function createRobot() {
-	'use strict';
 	var robot = Object.create(robotProto);
 
 	robot.__commands = [];
@@ -79,8 +75,6 @@ function createRobot() {
 }
 
 function findCommand(robot, message) {
-	'use strict';
-
 	var item = robot.__commands.reduce(function (result, item) {
 		if (result) {
 			return result;
@@ -95,8 +89,6 @@ function findCommand(robot, message) {
 }
 
 function createMessage(robot, message, room, userName, userId) {
-	'use strict';
-
 	var item = findCommand(robot, message);
 
 	var msg = null;
@@ -109,8 +101,6 @@ function createMessage(robot, message, room, userName, userId) {
 }
 
 function callCommand(command, msg) {
-	'use strict';
-
 	if (typeof command === 'undefined') {
 		throw new Error('Command not found');
 	}
@@ -119,32 +109,26 @@ function callCommand(command, msg) {
 }
 
 function getRoom(robot, room) {
-	'use strict';
 	return robot.brain.data.pushbot[room];
 }
 
 function getRoomSessions(robot, room) {
-	'use strict';
 	return getRoom(robot, room).sessions;
 }
 
 function getFirstRoomSession(robot, room) {
-	'use strict';
 	return getRoomSessions(robot, room)[0];
 }
 
 function getSessionsFirstUser(session) {
-	'use strict';
 	return session.users[0];
 }
 
 function getFirstSessionsFirstUser(robot, room) {
-	'use strict';
 	return getSessionsFirstUser(getFirstRoomSession(robot, room));
 }
 
 describe('pushbot', function () {
-	'use strict';
 	var robot, room, bot, userName, userId;
 	beforeEach(function () {
 		room = 'Room-' + rand();
@@ -756,7 +740,7 @@ describe('pushbot', function () {
 			expect(roomSessions).to.have.length(0);
 		});
 
-		it ('should reset channel title', function () {
+		it('should reset channel title', function () {
 			sinon.spy(msg, 'topic');
 			var cmd = findCommand(robot, '.clearplease');
 
