@@ -309,6 +309,19 @@ describe('pushbot', function () {
 			expect(getFirstRoomSession(robot, room).users).to.have.length(2);
 		});
 
+		it('should not allow to join to a session where he already in', function () {
+			var cmd = '.join with ' + userName + '\t';
+			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
+			callCommand(findCommand(robot, cmd), msg);
+			msg = createMessage(robot, cmd, room, newUserName, newUserId);
+			sinon.spy(msg, 'reply');
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(getFirstRoomSession(robot, room).users).to.have.length(2);
+			sinon.assert.calledWithExactly(msg.reply, 'User already participating in session');
+		});
+
 		describe('set topic', function () {
 			it('should add new username to title', function () {
 				var cmd = '.join with ' + userName;
@@ -614,6 +627,18 @@ describe('pushbot', function () {
 			expect(getFirstRoomSession(robot, room).users).to.have.length(1);
 
 		});
+
+		it('should not do anything if user not in session', function () {
+			var testUserName = 'user-' + rand();
+			var testUserId = rand();
+
+			var cmd = '.nevermind';
+			var msg = createMessage(robot, cmd, room, testUserName, testUserId);
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(getFirstRoomSession(robot, room).users).to.have.length(1);
+		});
 	});
 	describe('.message', function () {
 		beforeEach(function () {
@@ -703,6 +728,18 @@ describe('pushbot', function () {
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room)).to.have.property('state', state);
+		});
+
+		it('should not allow user, who is not in session to change state', function () {
+			var state = 'foo';
+			var cmd = '.at ' + state;
+			var msg = createMessage(robot, cmd, room, 'unkown-user-' + rand(), rand());
+
+			sinon.spy(msg, 'reply');
+			callCommand(findCommand(robot, cmd), msg);
+
+			expect(getFirstRoomSession(robot, room)).to.have.property('state', '');
+			sinon.assert.calledWithExactly(msg.reply, 'You are not leading any session');
 		});
 	});
 	describe('.done', function () {
