@@ -393,7 +393,12 @@ module.exports = (robot: Robot) => {
 			*/
 
 			if (sess.isAnyUserBad()) {
-				return new PushbotErrors.UsersNotReadyError(sess.getUsers().map(User.createUser).map(util.invoke('getName')));
+				let userNames = sess.getUsers()
+						.map(User.createUser)
+						.filter(util.invoke('isHolding'))
+						.map(util.invoke('getName'));
+
+				return new PushbotErrors.UsersNotReadyError(userNames);
 			}
 
 			if (sess.getState() === state) {
