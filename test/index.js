@@ -128,6 +128,14 @@ function getFirstSessionsFirstUser(robot, room) {
 	return getSessionsFirstUser(getFirstRoomSession(robot, room));
 }
 
+function ensureTopic(msg, topic) {
+	sinon.assert.calledWithExactly(msg.topic, topic);
+}
+
+function ensureReply(msg, reply) {
+	sinon.assert.calledWithExactly(msg.reply, reply);
+}
+
 describe('pushbot', function () {
 	var robot, room, bot, userName, userId;
 	beforeEach(function () {
@@ -233,7 +241,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName);
+				ensureTopic(msg, userName);
 
 				msg.topic.restore();
 			});
@@ -251,7 +259,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName);
+				ensureTopic(msg, userName + ' | ' + newUserName);
 
 				msg.topic.restore();
 
@@ -262,7 +270,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName + ' | ' + userName);
+				ensureTopic(msg, userName + ' | ' + newUserName + ' | ' + userName);
 
 				msg.topic.restore();
 			});
@@ -319,7 +327,7 @@ describe('pushbot', function () {
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room).users).to.have.length(2);
-			sinon.assert.calledWithExactly(msg.reply, 'User already participating in session');
+			ensureReply(msg, 'User already participating in session');
 		});
 
 		describe('set topic', function () {
@@ -332,7 +340,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName + ' + ' + newUserName);
+				ensureTopic(msg, userName + ' + ' + newUserName);
 
 				msg.topic.restore();
 			});
@@ -346,7 +354,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName + ' + ' + newUserName);
+				ensureTopic(msg, userName + ' + ' + newUserName);
 
 				msg.topic.restore();
 			});
@@ -360,7 +368,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName);
+				ensureTopic(msg, userName + ' | ' + newUserName);
 				msg.topic.restore();
 				cmd = '.join with ' + newUserName;
 				msg = createMessage(robot, cmd, room, userName, userId);
@@ -369,7 +377,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName + ' | ' + newUserName + ' + ' + userName);
+				ensureTopic(msg, userName + ' | ' + newUserName + ' + ' + userName);
 				msg.topic.restore();
 			});
 		});
@@ -442,7 +450,7 @@ describe('pushbot', function () {
 
 					callCommand(findCommand(robot, cmd), msg);
 					sinon.assert.calledOnce(msg.topic);
-					sinon.assert.calledWithExactly(msg.topic, users.slice(0, i + 1).concat([userName]).join(' | '));
+					ensureTopic(msg, users.slice(0, i + 1).concat([userName]).join(' | '));
 
 					msg.topic.restore();
 				});
@@ -540,7 +548,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName);
+				ensureTopic(msg, userName);
 			});
 		});
 	});
@@ -677,7 +685,7 @@ describe('pushbot', function () {
 
 				callCommand(findCommand(robot, cmd), msg);
 
-				sinon.assert.calledWithExactly(msg.topic, message + ' ' + userName);
+				ensureTopic(msg, message + ' ' + userName);
 
 				msg.topic.restore();
 			});
@@ -698,7 +706,7 @@ describe('pushbot', function () {
 
 					callCommand(findCommand(robot, cmd), msg);
 
-					sinon.assert.calledWithExactly(msg.topic, userName);
+					ensureTopic(msg, userName);
 				});
 			});
 		});
@@ -739,7 +747,7 @@ describe('pushbot', function () {
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room)).to.have.property('state', '');
-			sinon.assert.calledWithExactly(msg.reply, 'You are not leading any session');
+			ensureReply(msg, 'You are not leading any session');
 		});
 	});
 	describe('.done', function () {
@@ -782,7 +790,7 @@ describe('pushbot', function () {
 
 				expect(roomSessions).to.have.length(1);
 				sinon.assert.calledWithExactly(msg.send, newUserName + ': You are up!');
-				sinon.assert.calledWithExactly(msg.topic, newUserName);
+				ensureTopic(msg, newUserName);
 			});
 		});
 	});
@@ -810,7 +818,7 @@ describe('pushbot', function () {
 			callCommand(cmd, msg);
 
 			sinon.assert.calledOnce(msg.topic);
-			sinon.assert.calledWithExactly(msg.topic, '');
+			ensureTopic(msg, '');
 
 			msg.topic.restore();
 		});
@@ -865,7 +873,7 @@ describe('pushbot', function () {
 			callCommand(findCommand(robot, cmd), msg);
 
 			sinon.assert.calledOnce(msg.topic);
-			sinon.assert.calledWithExactly(msg.topic, userName);
+			ensureTopic(msg, userName);
 		});
 
 		describe('user in good state', function () {
@@ -896,7 +904,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName);
+				ensureTopic(msg, userName);
 			});
 		});
 
@@ -928,7 +936,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.topic);
-				sinon.assert.calledWithExactly(msg.topic, userName);
+				ensureTopic(msg, userName);
 			});
 		});
 	});
@@ -943,7 +951,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.reply);
-				sinon.assert.calledWithExactly(msg.reply, 'No sessions so far');
+				ensureReply(msg, 'No sessions so far');
 			});
 		});
 		describe('with sessions', function () {
@@ -962,7 +970,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				sinon.assert.calledOnce(msg.reply);
-				sinon.assert.calledWithExactly(msg.reply, 'leader: ' + userName);
+				ensureReply(msg, 'leader: ' + userName);
 			});
 
 			describe('with more users', function () {
@@ -984,7 +992,7 @@ describe('pushbot', function () {
 					callCommand(findCommand(robot, cmd), msg);
 
 					sinon.assert.calledOnce(msg.reply);
-					sinon.assert.calledWithExactly(msg.reply, 'leader: ' + userName + ', participants: ' + newUserName);
+					ensureReply(msg, 'leader: ' + userName + ', participants: ' + newUserName);
 				});
 
 				it('should include state', function () {
@@ -1084,7 +1092,7 @@ describe('pushbot', function () {
 
 			callCommand(findCommand(robot, cmd), msg);
 
-			sinon.assert.calledWithExactly(msg.topic, newUserName + ' + ' + userName);
+			ensureTopic(msg, newUserName + ' + ' + userName);
 			msg.topic.restore();
 		});
 
@@ -1138,7 +1146,7 @@ describe('pushbot', function () {
 						callCommand(findCommand(robot, cmd), msg);
 
 						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						ensureReply(msg, 'User not found in session');
 						msg.reply.restore();
 					});
 				});
@@ -1163,7 +1171,7 @@ describe('pushbot', function () {
 						callCommand(findCommand(robot, cmd), msg);
 
 						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						ensureReply(msg, 'User not found in session');
 						msg.reply.restore();
 					});
 
@@ -1272,7 +1280,7 @@ describe('pushbot', function () {
 						callCommand(findCommand(robot, cmd), msg);
 
 						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						ensureReply(msg, 'User not found in session');
 						msg.reply.restore();
 					});
 				});
@@ -1297,7 +1305,7 @@ describe('pushbot', function () {
 						callCommand(findCommand(robot, cmd), msg);
 
 						sinon.assert.calledOnce(msg.reply);
-						sinon.assert.calledWithExactly(msg.reply, 'User not found in session');
+						ensureReply(msg, 'User not found in session');
 						msg.reply.restore();
 					});
 
@@ -1456,7 +1464,7 @@ describe('pushbot', function () {
 					callCommand(findCommand(robot, cmd), msg);
 
 					sinon.assert.calledOnce(msg.reply);
-					sinon.assert.calledWithExactly(msg.reply, 'Room holded');
+					ensureReply(msg, 'Room holded');
 
 					msg.reply.restore();
 				});
@@ -1499,7 +1507,7 @@ describe('pushbot', function () {
 					callCommand(findCommand(robot, cmd), msg);
 
 					sinon.assert.calledOnce(msg.reply);
-					sinon.assert.calledWithExactly(msg.reply, 'Room holded');
+					ensureReply(msg, 'Room holded');
 
 					msg.reply.restore();
 				});
@@ -1559,7 +1567,7 @@ describe('pushbot', function () {
 
 					sinon.assert.calledOnce(msg.reply);
 
-					sinon.assert.calledWithExactly(msg.reply, 'Users are not ready: ' + userName);
+					ensureReply(msg, 'Users are not ready: ' + userName);
 
 					msg.reply.restore();
 				});
