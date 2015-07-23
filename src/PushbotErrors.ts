@@ -37,11 +37,11 @@ module PushbotErrors {
 		public name: string = 'UsersNotReadyError';
 		constructor(users?: string[]) {
 			super()
-				if (users && users.length) {
-					this.message = 'Users are not ready: ' + users.join(', ');
-				} else {
-					this.message = 'Users are not ready';
-				}
+			if (users && users.length) {
+				this.message = 'Users are not ready: ' + users.join(', ');
+			} else {
+				this.message = 'Users are not ready';
+			}
 		}
 	}
 
