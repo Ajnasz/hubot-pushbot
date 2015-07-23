@@ -5,6 +5,8 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-release');
 	grunt.loadNpmTasks('grunt-contrib-concat');
 	grunt.loadNpmTasks('grunt-contrib-clean');
+	grunt.loadNpmTasks('grunt-mocha-test');
+	grunt.loadNpmTasks('grunt-blanket');
 
 	grunt.initConfig({
 		typescript: {
@@ -31,8 +33,33 @@ module.exports = function (grunt) {
 			base: {
 				src: 'src/pushbot-out.js'
 			}
+		},
+		mochaTest: {
+			test: {
+				options: {
+					ui: 'bdd',
+					reporter: 'spec',
+					require: 'coverage/blanket'
+				},
+				src: ['test/*.js']
+			},
+			'html-cov': {
+				options: {
+					reporter: 'html-cov',
+					quiet: true,
+					captureFile: 'coverage.html'
+				},
+				src: ['test/*.js']
+			},
+			'travis-cov': {
+				options: {
+					reporter: 'travis-cov'
+				},
+				src: ['test/*.js']
+			}
 		}
 	});
 
 	grunt.registerTask('compile', ['typescript', 'concat', 'clean']);
+	grunt.registerTask('test', ['mochaTest:test', 'mochaTest:travis-cov']);
 };

@@ -39,17 +39,29 @@
     }
   ],
   "scripts": {
-    "test": "npm install && $(npm bin)/mocha --ui bdd",
+    "test": "npm install && $(npm bin)/grunt test",
     "install": "$(npm bin)/grunt compile"
   },
   "engines": {
     "node": ">= 0.10.x"
   },
   "devDependencies": {
+    "blanket": "^1.1.7",
     "chai": "^2.1.2",
     "grunt": "^0.4.5",
+    "grunt-blanket": "0.0.8",
+    "grunt-mocha-test": "^0.12.7",
     "grunt-release": "^0.11.0",
     "mocha": "^2.2.1",
-    "sinon": "^1.14.1"
+    "sinon": "^1.14.1",
+    "travis-cov": "^0.2.5"
+  },
+  "config": {
+    "blanket": {
+      "pattern": "src/pushbot.js"
+    },
+	"travis-cov": {
+		"threshold": 85
+	}
   }
 }
