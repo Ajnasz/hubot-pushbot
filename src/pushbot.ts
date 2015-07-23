@@ -709,8 +709,8 @@ module.exports = (robot: Robot) => {
 
 		let roomSessions = brain.getRoomSessions(room);
 
-		if (roomSessions.length) {
-			msg.send(roomSessions.map((session): string => {
+		if (roomSessions && roomSessions.length) {
+			msg.reply(roomSessions.map((session): string => {
 				let msg: string[] = [];
 				let sess = Session.sessionObj(session);
 
@@ -722,10 +722,17 @@ module.exports = (robot: Robot) => {
 					msg.push('message: ' + sess.getMessage());
 				}
 				msg.push('leader: ' + sess.getLeader());
-				msg.push('participants: ' + getUserListStr(getSortedSessionUsers(sess)));
+
+				if (sess.getUsers().length > 1) {
+					msg.push('participants: ' + getUserListStr(getSortedSessionUsers(sess).filter((u) => {
+						return u.getName() !== sess.getLeader();
+					})));
+				}
 
 				return msg.join(', ');
 			}).join('\n'));
+		} else {
+			msg.reply('No sessions so far');
 		}
 	}
 

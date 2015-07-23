@@ -906,7 +906,112 @@ describe('pushbot', function () {
 			});
 		});
 	});
-	describe.skip('.sessions', function () {});
+	describe('.sessions', function () {
+		describe('no sessions', function () {
+			it('should reply to user that no sessions', function () {
+				var cmd = '.sessions';
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'reply');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.reply);
+				sinon.assert.calledWithExactly(msg.reply, 'No sessions so far');
+			});
+		});
+		describe('with sessions', function () {
+			beforeEach(function () {
+				var cmd, msg;
+				cmd = '.join';
+				msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+			});
+			it('should reply to user that no sessions', function () {
+				var cmd = '.sessions';
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'reply');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				sinon.assert.calledOnce(msg.reply);
+				sinon.assert.calledWithExactly(msg.reply, 'leader: ' + userName);
+			});
+
+			describe('with more users', function () {
+				var newUserName = 'new-user-' + rand();
+				var newUserId = rand();
+
+				beforeEach(function () {
+					var cmd, msg;
+					cmd = '.join with ' + userName;
+					msg = createMessage(robot, cmd, room, newUserName, newUserId);
+					callCommand(findCommand(robot, cmd), msg);
+				});
+				it('should reply to user that no sessions', function () {
+					var cmd = '.sessions';
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'reply');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.calledOnce(msg.reply);
+					sinon.assert.calledWithExactly(msg.reply, 'leader: ' + userName + ', participants: ' + newUserName);
+				});
+
+				it('should include state', function () {
+					var cmd = '.at prod';
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					cmd = '.sessions';
+
+					msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'reply');
+					callCommand(findCommand(robot, cmd), msg);
+					ensureReply(msg, '<prod>, leader: ' + userName + ', participants: ' + newUserName);
+
+				});
+
+				it('should include message', function () {
+					var cmd = '.message foo bar baz';
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					cmd = '.sessions';
+
+					msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'reply');
+					callCommand(findCommand(robot, cmd), msg);
+					ensureReply(msg, 'message: foo bar baz, leader: ' + userName + ', participants: ' + newUserName);
+				});
+
+				it('should include message and state', function () {
+					var cmd = '.message foo bar baz';
+					var msg = createMessage(robot, cmd, room, userName, userId);
+
+					callCommand(findCommand(robot, cmd), msg);
+					cmd = '.at prod';
+					msg = createMessage(robot, cmd, room, userName, userId);
+					callCommand(findCommand(robot, cmd), msg);
+
+					cmd = '.sessions';
+
+					msg = createMessage(robot, cmd, room, userName, userId);
+
+					sinon.spy(msg, 'reply');
+					callCommand(findCommand(robot, cmd), msg);
+					ensureReply(msg, '<prod>, message: foo bar baz, leader: ' + userName + ', participants: ' + newUserName);
+				});
+			});
+		});
+	});
 
 	describe('.drive', function () {
 		var newUserName = 'user-' + rand();
