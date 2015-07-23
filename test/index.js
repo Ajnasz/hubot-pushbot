@@ -750,6 +750,7 @@ describe('pushbot', function () {
 		});
 		afterEach(function () {
 		});
+
 		it('should remove session', function () {
 			var cmd = '.done';
 			var msg = createMessage(robot, cmd, room, userName, userId);
@@ -758,6 +759,31 @@ describe('pushbot', function () {
 			var roomSessions = getRoomSessions(robot, room);
 
 			expect(roomSessions).to.have.length(0);
+		});
+
+		describe('has more sessions', function () {
+			var newUserName = 'user2-' + rand();
+			var newUserId = rand();
+
+			beforeEach(function () {
+				var cmd = '.join';
+				var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+				callCommand(findCommand(robot, cmd), msg);
+			});
+			it('should remove session, and call for next session', function () {
+				var cmd = '.done';
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'send');
+				sinon.spy(msg, 'topic');
+				callCommand(findCommand(robot, cmd), msg);
+
+				var roomSessions = getRoomSessions(robot, room);
+
+				expect(roomSessions).to.have.length(1);
+				sinon.assert.calledWithExactly(msg.send, newUserName + ': You are up!');
+				sinon.assert.calledWithExactly(msg.topic, newUserName);
+			});
 		});
 	});
 	describe('.clearplease', function () {
