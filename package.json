@@ -48,7 +48,6 @@
   "devDependencies": {
     "blanket": "^1.1.7",
     "chai": "^2.1.2",
-    "grunt": "^0.4.5",
     "grunt-blanket": "0.0.8",
     "grunt-mocha-test": "^0.12.7",
     "grunt-release": "^0.11.0",
