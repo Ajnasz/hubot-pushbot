@@ -112,6 +112,12 @@ module Session {
 
 			return index;
 		}
+
+		getHoldingUsers(): User.User[] {
+			return this.getUsers().map(User.createUser).filter((user) => {
+				return user.isGood();
+			});
+		}
 	}
 
 	export function sessionObj(session): Session.Session {

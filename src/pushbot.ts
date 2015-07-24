@@ -357,10 +357,7 @@ module.exports = (robot: Robot) => {
 			}
 
 			if (!isUsersStateOk(action, sess)) {
-				let holdingUsers = sess.getUsers().map(User.createUser).filter((user) => {
-					return user.isGood();
-				});
-				return new PushbotErrors.UsersNotReadyError(holdingUsers.map(util.invoke('getName')));
+				return new PushbotErrors.UsersNotReadyError(sess.getHoldingUsers().map(util.invoke('getName')));
 			}
 
 			removeSession(room, sess.getLeader());
