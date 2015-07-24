@@ -876,6 +876,19 @@ describe('pushbot', function () {
 			ensureTopic(msg, userName);
 		});
 
+		it('should not allow to kick, if user not in session', function () {
+			var cmd = '.kick ' + newUserName;
+			var thirdUserName = 'user-' + rand();
+			var thirdUserId = 'user-' + rand();
+			var msg = createMessage(robot, cmd, room, thirdUserName, thirdUserId);
+
+			callCommand(findCommand(robot, cmd), msg);
+
+			var session = getFirstRoomSession(robot, room);
+
+			expect(session.users).to.have.length(2);
+		});
+
 		describe('user in good state', function () {
 			beforeEach(function () {
 				var cmd, msg;
