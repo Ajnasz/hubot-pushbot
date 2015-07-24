@@ -6,7 +6,7 @@ class KickAction implements Action {
 	}
 
 	requireMembership() {
-		return false;
+		return true;
 	}
 
 	requireAllUserGood() {
