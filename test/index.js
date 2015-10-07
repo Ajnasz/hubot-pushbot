@@ -793,6 +793,24 @@ describe('pushbot', function () {
 				ensureTopic(msg, newUserName);
 			});
 		});
+
+		describe('has no sessions', function () {
+			it('must do nothing', function () {
+				var cmd = '.done';
+				var msg = createMessage(robot, cmd, room, userName, userId);
+
+				sinon.spy(msg, 'send');
+				sinon.spy(msg, 'topic');
+
+				callCommand(findCommand(robot, cmd), msg);
+
+				var roomSessions = getRoomSessions(robot, room);
+
+				expect(roomSessions).to.have.length(0);
+				sinon.assert.notCalled(msg.send);
+				ensureTopic(msg, '');
+			});
+		});
 	});
 	describe('.clearplease', function () {
 		var msg;

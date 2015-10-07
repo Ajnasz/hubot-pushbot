@@ -337,6 +337,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function finish(room: string, userName: string): Error {
+		createRoom(room);
+
 		let brain: Brain.Brain = createBrain();
 
 		if (brain.getRoom(room).isHolded()) {
@@ -369,6 +371,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function setRoomState(room: string, userName: string, state: string): Error {
+		createRoom(room);
+
 		let brain = createBrain();
 
 		if (brain.getRoom(room).isHolded()) {
@@ -415,6 +419,8 @@ module.exports = (robot: Robot) => {
 	}
 
 	function unholdRoom(room: string): Error {
+		createRoom(room);
+
 		let brain = createBrain();
 		let roomObj = brain.getRoom(room);
 
@@ -434,13 +440,10 @@ module.exports = (robot: Robot) => {
 	}
 
 	function holdRoom(room: string, message: string): Error {
+		createRoom(room);
+
 		let brain = createBrain();
 		let roomObj = brain.getRoom(room);
-
-		if (!roomObj) {
-			createRoom(room);
-			roomObj = brain.getRoom(room);
-		}
 
 		roomObj.hold();
 		roomObj.setHoldMessage(message);
