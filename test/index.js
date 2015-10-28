@@ -136,13 +136,17 @@ function ensureReply(msg, reply) {
 	sinon.assert.calledWithExactly(msg.reply, reply);
 }
 
+function genUserName() {
+	return 'user-special.chars_' + rand();
+}
+
 describe('pushbot', function () {
 	var robot, room, bot, userName, userId;
 	beforeEach(function () {
 		room = 'Room-' + rand();
 		robot = createRobot();
 		bot = pushbot(robot);
-		userName = 'user-' + rand();
+		userName = genUserName();
 		userId = rand();
 	});
 	afterEach(function () {
@@ -251,7 +255,7 @@ describe('pushbot', function () {
 				var msg = createMessage(robot, cmd, room, userName, userId);
 
 				callCommand(findCommand(robot, cmd), msg);
-				var newUserName = 'user-' + rand();
+				var newUserName = genUserName();
 				var newUserId = rand();
 				msg = createMessage(robot, cmd, room, newUserName, newUserId);
 				sinon.spy(msg, 'topic');
@@ -441,7 +445,7 @@ describe('pushbot', function () {
 
 		describe('set topic', function () {
 			it('should add usernames to topic in order', function () {
-				var users = ['user-' + rand(), 'user-' + rand()];
+				var users = [genUserName(), genUserName()];
 				users.forEach(function (name, i) {
 					var cmd = '.join before ' + userName;
 					var msg = createMessage(robot, cmd, room, name, rand());
@@ -620,7 +624,7 @@ describe('pushbot', function () {
 		});
 
 		it('should remove the user from the channel', function () {
-			var testUserName = 'user-' + rand();
+			var testUserName = genUserName();
 			var testUserId = rand();
 			var cmd = '.join with ' + userName;
 			var msg = createMessage(robot, cmd, room, testUserName, testUserId);
@@ -637,7 +641,7 @@ describe('pushbot', function () {
 		});
 
 		it('should not do anything if user not in session', function () {
-			var testUserName = 'user-' + rand();
+			var testUserName = genUserName();
 			var testUserId = rand();
 
 			var cmd = '.nevermind';
@@ -741,7 +745,7 @@ describe('pushbot', function () {
 		it('should not allow user, who is not in session to change state', function () {
 			var state = 'foo';
 			var cmd = '.at ' + state;
-			var msg = createMessage(robot, cmd, room, 'unkown-user-' + rand(), rand());
+			var msg = createMessage(robot, cmd, room, 'unkown-' + genUserName(), rand());
 
 			sinon.spy(msg, 'reply');
 			callCommand(findCommand(robot, cmd), msg);
@@ -842,11 +846,12 @@ describe('pushbot', function () {
 		});
 	});
 	describe('.kick', function () {
-		var newUserName = 'user-' + rand();
+		var newUserName = genUserName();
 		var newUserId = rand();
 
 		beforeEach(function () {
 			var cmd, msg, session;
+
 			cmd = '.join';
 			msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -896,8 +901,8 @@ describe('pushbot', function () {
 
 		it('should not allow to kick, if user not in session', function () {
 			var cmd = '.kick ' + newUserName;
-			var thirdUserName = 'user-' + rand();
-			var thirdUserId = 'user-' + rand();
+			var thirdUserName = genUserName();
+			var thirdUserId = genUserName();
 			var msg = createMessage(robot, cmd, room, thirdUserName, thirdUserId);
 
 			callCommand(findCommand(robot, cmd), msg);
@@ -1079,7 +1084,7 @@ describe('pushbot', function () {
 	});
 
 	describe('.drive', function () {
-		var newUserName = 'user-' + rand();
+		var newUserName = genUserName();
 		var newUserId = rand();
 		beforeEach(function () {
 			var cmd, msg;
@@ -1147,7 +1152,7 @@ describe('pushbot', function () {
 	describe('use cases', function () {
 		describe('when the user isn\'t joined to session', function () {
 			describe('and there is one session', function () {
-				var newUserName = 'user-' + rand();
+				var newUserName = genUserName();
 				var newUserId = rand();
 				beforeEach(function () {
 					var cmd = '.join';
