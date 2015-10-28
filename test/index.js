@@ -17,7 +17,6 @@ function rand() {
 	return Math.round(Math.random() * 10000000);
 }
 
-
 var robotProto = {
 	hear: function (regexp, cb) {
 		this.__commands.push({
@@ -142,6 +141,7 @@ function genUserName() {
 
 describe('pushbot', function () {
 	var robot, room, bot, userName, userId;
+
 	beforeEach(function () {
 		room = 'Room-' + rand();
 		robot = createRobot();
@@ -161,6 +161,7 @@ describe('pushbot', function () {
 
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(robot.brain.data.pushbot).to.be.an('object');
@@ -172,6 +173,7 @@ describe('pushbot', function () {
 		it('should add session to robot brain', function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(robot.brain.data.pushbot[room].sessions).to.have.length(1);
@@ -180,6 +182,7 @@ describe('pushbot', function () {
 		it('should set properties to session', function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var session = getFirstRoomSession(robot, room);
@@ -196,6 +199,7 @@ describe('pushbot', function () {
 		it('should add sender to users list', function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var session = getFirstRoomSession(robot, room);
@@ -204,6 +208,7 @@ describe('pushbot', function () {
 			expect(session.users).to.have.length(1);
 
 			var firstUser = getSessionsFirstUser(session);
+
 			expect(firstUser).to.be.an('object');
 			expect(firstUser.name).to.deep.equal(msg.message.user.name);
 
@@ -214,8 +219,8 @@ describe('pushbot', function () {
 		it('should create as many sessions, as many times called', function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
-			callCommand(findCommand(robot, cmd), msg);
 
+			callCommand(findCommand(robot, cmd), msg);
 
 			msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
@@ -229,6 +234,7 @@ describe('pushbot', function () {
 
 			var cmd = '.join ';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(robot.brain.data.pushbot).to.be.an('object');
@@ -240,6 +246,7 @@ describe('pushbot', function () {
 			it('should add username to room topic', function () {
 				var cmd = '.join';
 				var msg = createMessage(robot, cmd, room, userName, userId);
+
 				sinon.spy(msg, 'topic');
 
 				callCommand(findCommand(robot, cmd), msg);
@@ -257,6 +264,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 				var newUserName = genUserName();
 				var newUserId = rand();
+
 				msg = createMessage(robot, cmd, room, newUserName, newUserId);
 				sinon.spy(msg, 'topic');
 
@@ -283,9 +291,11 @@ describe('pushbot', function () {
 
 	describe('.join with', function () {
 		var newUserName, newUserId;
+
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			newUserName = 'user2-' + rand();
@@ -390,9 +400,11 @@ describe('pushbot', function () {
 	describe('.join before', function () {
 		var newUserName = 'user2-' + rand(),
 			newUserId = rand();
+
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -400,7 +412,9 @@ describe('pushbot', function () {
 		it('should add a new session', function () {
 			var cmd = '.join before ' + userName;
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
 			callCommand(findCommand(robot, cmd), msg);
+
 			var roomSessions = getRoomSessions(robot, room);
 
 			expect(roomSessions).to.have.length(2);
@@ -408,6 +422,7 @@ describe('pushbot', function () {
 		it('should before the other session, which has mentioned username', function () {
 			var cmd = '.join before ' + userName;
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var roomSessions = getRoomSessions(robot, room);
@@ -419,6 +434,7 @@ describe('pushbot', function () {
 		it('should have the same properties as the session with .join', function () {
 			var cmd = '.join before ' + userName;
 			var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var session = getFirstRoomSession(robot, room);
@@ -446,6 +462,7 @@ describe('pushbot', function () {
 		describe('set topic', function () {
 			it('should add usernames to topic in order', function () {
 				var users = [genUserName(), genUserName()];
+
 				users.forEach(function (name, i) {
 					var cmd = '.join before ' + userName;
 					var msg = createMessage(robot, cmd, room, name, rand());
@@ -466,6 +483,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -474,6 +492,7 @@ describe('pushbot', function () {
 			var holdMessage = 'hold message - ' + rand();
 			var cmd = '.hold ' + holdMessage;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var roomData = getRoom(robot, room);
@@ -485,6 +504,7 @@ describe('pushbot', function () {
 			var holdMessage = 'hold message - ' + rand();
 			var cmd = '.hold ' + holdMessage;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var roomData = getRoom(robot, room);
@@ -504,6 +524,7 @@ describe('pushbot', function () {
 
 				sinon.assert.calledOnce(msg.topic);
 				var regexp = new RegExp('^HOLD: . ' + holdMessage);
+
 				sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
 
 				msg.topic.restore();
@@ -515,6 +536,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -523,6 +545,7 @@ describe('pushbot', function () {
 			var holdMessage = 'hold message - ' + rand();
 			var cmd = '.hold ' + holdMessage;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var roomData = getRoom(robot, room);
@@ -542,6 +565,7 @@ describe('pushbot', function () {
 				var holdMessage = 'hold message - ' + rand();
 				var cmd = '.hold ' + holdMessage;
 				var msg = createMessage(robot, cmd, room, userName, userId);
+
 				callCommand(findCommand(robot, cmd), msg);
 
 				cmd = '.unhold';
@@ -560,6 +584,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -568,6 +593,7 @@ describe('pushbot', function () {
 		it('should set user status to uhoh', function () {
 			var cmd = '.uhoh';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', UserStates.Uhoh);
 		});
@@ -576,6 +602,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -584,6 +611,7 @@ describe('pushbot', function () {
 		it('should set user status to good', function () {
 			var cmd = '.good';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', UserStates.Good);
@@ -610,6 +638,7 @@ describe('pushbot', function () {
 				callCommand(findCommand(robot, cmd), msg);
 
 				var regexp = new RegExp('✓' + userName);
+
 				sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
 			});
 		});
@@ -618,6 +647,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -628,6 +658,7 @@ describe('pushbot', function () {
 			var testUserId = rand();
 			var cmd = '.join with ' + userName;
 			var msg = createMessage(robot, cmd, room, testUserName, testUserId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room).users).to.have.length(2);
@@ -656,6 +687,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -665,6 +697,7 @@ describe('pushbot', function () {
 			var message = 'This is a message ' + rand();
 			var cmd = '.message ' + message;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room)).to.have.property('message', message);
@@ -674,6 +707,7 @@ describe('pushbot', function () {
 			var message = 'This is a message ' + rand() + ' árvíztűrő tükörfúrógép';
 			var cmd = '.message ' + message;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room)).to.have.property('message', message);
@@ -700,6 +734,7 @@ describe('pushbot', function () {
 					var message = 'This is a message ' + rand();
 					var cmd = '.message ' + message;
 					var msg = createMessage(robot, cmd, room, userName, userId);
+
 					callCommand(findCommand(robot, cmd), msg);
 
 					cmd = '.message -';
@@ -719,6 +754,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -728,6 +764,7 @@ describe('pushbot', function () {
 			var state = 'prod';
 			var cmd = '.at ' + state;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room)).to.have.property('state', state);
@@ -737,6 +774,7 @@ describe('pushbot', function () {
 			var state = 'árvíztűrés';
 			var cmd = '.at ' + state;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			expect(getFirstRoomSession(robot, room)).to.have.property('state', state);
@@ -758,6 +796,7 @@ describe('pushbot', function () {
 		beforeEach(function () {
 			var cmd = '.join';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 		});
 		afterEach(function () {
@@ -766,6 +805,7 @@ describe('pushbot', function () {
 		it('should remove session', function () {
 			var cmd = '.done';
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var roomSessions = getRoomSessions(robot, room);
@@ -780,6 +820,7 @@ describe('pushbot', function () {
 			beforeEach(function () {
 				var cmd = '.join';
 				var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
 				callCommand(findCommand(robot, cmd), msg);
 			});
 			it('should remove session, and call for next session', function () {
@@ -818,6 +859,7 @@ describe('pushbot', function () {
 	});
 	describe('.clearplease', function () {
 		var msg;
+
 		beforeEach(function () {
 			msg = createMessage(robot, '.clearplease', room, userName, userId);
 		});
@@ -880,6 +922,7 @@ describe('pushbot', function () {
 		it('should remove user from the queue', function () {
 			var cmd = '.kick ' + newUserName;
 			var msg = createMessage(robot, cmd, room, userName, userId);
+
 			callCommand(findCommand(robot, cmd), msg);
 
 			var session = getFirstRoomSession(robot, room);
@@ -915,6 +958,7 @@ describe('pushbot', function () {
 		describe('user in good state', function () {
 			beforeEach(function () {
 				var cmd, msg;
+
 				cmd = '.good';
 				msg = createMessage(robot, cmd, room, newUserName, newUserId);
 				callCommand(findCommand(robot, cmd), msg);
@@ -924,6 +968,7 @@ describe('pushbot', function () {
 			it('should remove user from the queue', function () {
 				var cmd = '.kick ' + newUserName;
 				var msg = createMessage(robot, cmd, room, userName, userId);
+
 				callCommand(findCommand(robot, cmd), msg);
 
 				var session = getFirstRoomSession(robot, room);
@@ -947,6 +992,7 @@ describe('pushbot', function () {
 		describe('user in bad state', function () {
 			beforeEach(function () {
 				var cmd, msg;
+
 				cmd = '.bad';
 				msg = createMessage(robot, cmd, room, newUserName, newUserId);
 				callCommand(findCommand(robot, cmd), msg);
@@ -958,6 +1004,7 @@ describe('pushbot', function () {
 
 				var cmd = '.kick ' + newUserName;
 				var msg = createMessage(robot, cmd, room, userName, userId);
+
 				callCommand(findCommand(robot, cmd), msg);
 
 				expect(session.users).to.have.length(1);
@@ -993,6 +1040,7 @@ describe('pushbot', function () {
 		describe('with sessions', function () {
 			beforeEach(function () {
 				var cmd, msg;
+
 				cmd = '.join';
 				msg = createMessage(robot, cmd, room, userName, userId);
 				callCommand(findCommand(robot, cmd), msg);
@@ -1015,6 +1063,7 @@ describe('pushbot', function () {
 
 				beforeEach(function () {
 					var cmd, msg;
+
 					cmd = '.join with ' + userName;
 					msg = createMessage(robot, cmd, room, newUserName, newUserId);
 					callCommand(findCommand(robot, cmd), msg);
@@ -1086,8 +1135,10 @@ describe('pushbot', function () {
 	describe('.drive', function () {
 		var newUserName = genUserName();
 		var newUserId = rand();
+
 		beforeEach(function () {
 			var cmd, msg;
+
 			cmd = '.join';
 			msg = createMessage(robot, cmd, room, userName, userId);
 			callCommand(findCommand(robot, cmd), msg);
@@ -1097,6 +1148,7 @@ describe('pushbot', function () {
 			callCommand(findCommand(robot, cmd), msg);
 
 			var session = getFirstRoomSession(robot, room);
+
 			expect(session.users).to.have.length(2);
 		});
 
@@ -1105,6 +1157,7 @@ describe('pushbot', function () {
 
 		it('should change the leader', function () {
 			var cmd, msg;
+
 			cmd = '.drive';
 			msg = createMessage(robot, cmd, room, newUserName, newUserId);
 
@@ -1116,11 +1169,13 @@ describe('pushbot', function () {
 			msg.reply.restore();
 
 			var session = getFirstRoomSession(robot, room);
+
 			expect(session.leader).to.deep.equal(newUserName);
 		});
 
 		it('should set new topic, where the new user is on the first place', function () {
 			var cmd, msg;
+
 			cmd = '.drive';
 			msg = createMessage(robot, cmd, room, newUserName, newUserId);
 
@@ -1134,6 +1189,7 @@ describe('pushbot', function () {
 
 		it('should not call reply or topic if the leader wants to drive', function () {
 			var cmd, msg;
+
 			cmd = '.drive';
 			msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -1154,15 +1210,18 @@ describe('pushbot', function () {
 			describe('and there is one session', function () {
 				var newUserName = genUserName();
 				var newUserId = rand();
+
 				beforeEach(function () {
 					var cmd = '.join';
 					var msg = createMessage(robot, cmd, room, newUserName, newUserId);
+
 					callCommand(findCommand(robot, cmd), msg);
 				});
 				afterEach(function () {
 				});
 				describe('tries to set himeself as good', function () {
 					var cmd = '.good';
+
 					it('should not change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -1188,6 +1247,7 @@ describe('pushbot', function () {
 				});
 				describe('tries to set himeself as bad', function () {
 					var cmd = '.bad';
+
 					it('should not change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -1225,6 +1285,7 @@ describe('pushbot', function () {
 				describe('tries to set hold message', function () {
 					var holdMessage = 'foobar';
 					var cmd = '.hold ' + holdMessage;
+
 					it('should change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -1234,6 +1295,7 @@ describe('pushbot', function () {
 
 						sinon.assert.calledOnce(msg.topic);
 						var regexp = new RegExp('^HOLD: . ' + holdMessage);
+
 						sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
 						msg.topic.restore();
 					});
@@ -1266,6 +1328,7 @@ describe('pushbot', function () {
 				});
 				describe('tries to send unhold', function () {
 					var cmd = '.unhold';
+
 					it('should not change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -1297,6 +1360,7 @@ describe('pushbot', function () {
 			describe('and not even one session exists', function () {
 				describe('tries to set himeself as good', function () {
 					var cmd = '.good';
+
 					it('should not change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -1322,6 +1386,7 @@ describe('pushbot', function () {
 				});
 				describe('tries to set himeself as bad', function () {
 					var cmd = '.bad';
+
 					it('should not change the topic', function () {
 						var msg = createMessage(robot, cmd, room, userName, userId);
 
@@ -1369,6 +1434,7 @@ describe('pushbot', function () {
 
 						sinon.assert.calledOnce(msg.topic);
 						var regexp = new RegExp('^HOLD: . ' + holdMessage);
+
 						sinon.assert.calledWithMatch(msg.topic, sinon.match(regexp));
 						msg.topic.restore();
 					});
@@ -1399,9 +1465,6 @@ describe('pushbot', function () {
 						msg.send.restore();
 					});
 				});
-
-
-				// --------------------------------
 
 				describe('tries to send unhold', function () {
 					var cmd = '.unhold';
@@ -1438,6 +1501,7 @@ describe('pushbot', function () {
 		describe('when the user is joined to session', function () {
 			beforeEach(function () {
 				var cmd, msg;
+
 				cmd = '.join';
 				msg = createMessage(robot, cmd, room, userName, userId);
 				callCommand(findCommand(robot, cmd), msg);
@@ -1447,6 +1511,7 @@ describe('pushbot', function () {
 
 			describe('user tries to finish a session', function () {
 				var cmd, msg;
+
 				beforeEach(function () {
 					cmd = '.done';
 					msg = createMessage(robot, cmd, room, userName, userId);
@@ -1460,6 +1525,7 @@ describe('pushbot', function () {
 					callCommand(findCommand(robot, cmd), msg);
 
 					var roomSessions = getRoomSessions(robot, room);
+
 					expect(roomSessions).to.have.length(0);
 				});
 			});
@@ -1467,6 +1533,7 @@ describe('pushbot', function () {
 		describe('when hold is set', function () {
 			beforeEach(function () {
 				var cmd, msg;
+
 				cmd = '.join';
 				msg = createMessage(robot, cmd, room, userName, userId);
 				callCommand(findCommand(robot, cmd), msg);
@@ -1479,6 +1546,7 @@ describe('pushbot', function () {
 			});
 			describe('user tries to change session state', function () {
 				var cmd, msg;
+
 				beforeEach(function () {
 					cmd = '.at prod';
 					msg = createMessage(robot, cmd, room, userName, userId);
@@ -1516,6 +1584,7 @@ describe('pushbot', function () {
 			});
 			describe('user tries to mark session done', function () {
 				var cmd, msg;
+
 				beforeEach(function () {
 					cmd = '.done';
 					msg = createMessage(robot, cmd, room, userName, userId);
@@ -1564,6 +1633,7 @@ describe('pushbot', function () {
 		describe('when uhoh is set', function () {
 			beforeEach(function () {
 				var cmd, msg;
+
 				cmd = '.join';
 				msg = createMessage(robot, cmd, room, userName, userId);
 				callCommand(findCommand(robot, cmd), msg);
@@ -1581,6 +1651,7 @@ describe('pushbot', function () {
 			});
 			describe('user tries to change session state', function () {
 				var cmd, msg;
+
 				beforeEach(function () {
 					cmd = '.at prod';
 					msg = createMessage(robot, cmd, room, userName, userId);
