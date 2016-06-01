@@ -1,6 +1,6 @@
 module User {
 
-	export enum UserState { Good, Uhoh, Waiting }
+	export enum UserState { Good, Uhoh, Waiting, Spectate }
 
 	export interface UserData {
 		name: string;
@@ -37,6 +37,10 @@ module User {
 
 		isHolding(): boolean {
 			return this.getState() === UserState.Uhoh;
+		}
+
+		isSpectating(): boolean {
+			return this.getState() === UserState.Spectate;
 		}
 	}
 

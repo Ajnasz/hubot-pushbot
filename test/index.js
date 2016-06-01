@@ -580,6 +580,26 @@ describe('pushbot', function () {
 			});
 		});
 	});
+
+	describe('.spectate', function () {
+		beforeEach(function () {
+			var cmd = '.join';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+
+			callCommand(findCommand(robot, cmd), msg);
+		});
+		afterEach(function () {
+		});
+
+		it('should set user status to spectate', function () {
+			var cmd = '.spectate';
+			var msg = createMessage(robot, cmd, room, userName, userId);
+
+			callCommand(findCommand(robot, cmd), msg);
+			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', UserStates.Spectate);
+		});
+	});
+
 	describe('.uhoh', function () {
 		beforeEach(function () {
 			var cmd = '.join';
@@ -598,6 +618,7 @@ describe('pushbot', function () {
 			expect(getFirstSessionsFirstUser(robot, room)).to.have.property('state', UserStates.Uhoh);
 		});
 	});
+
 	describe('.good', function () {
 		beforeEach(function () {
 			var cmd = '.join';
@@ -1630,6 +1651,58 @@ describe('pushbot', function () {
 				});
 			});
 		});
+
+		describe('when spectate is set', function () {
+			beforeEach(function () {
+				var cmd, msg;
+
+				cmd = '.join';
+				msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+
+				cmd = '.join with ' + userName;
+
+				msg = createMessage(robot, cmd, room, 'other-user-' + rand(), rand());
+				callCommand(findCommand(robot, cmd), msg);
+
+				cmd = '.spectate';
+				msg = createMessage(robot, cmd, room, userName, userId);
+				callCommand(findCommand(robot, cmd), msg);
+			});
+
+			afterEach(function () {
+			});
+
+			describe('user tries to change session state', function () {
+				var cmd, msg;
+
+				beforeEach(function () {
+					cmd = '.at prod';
+					msg = createMessage(robot, cmd, room, userName, userId);
+				});
+				afterEach(function () {
+					cmd = null;
+					msg = null;
+				});
+				it('should allow to change session state', function () {
+					callCommand(findCommand(robot, cmd), msg);
+
+					var session = getFirstRoomSession(robot, room);
+
+					expect(session).to.have.property('state', 'prod');
+				});
+				it('should change the topic', function () {
+					sinon.spy(msg, 'topic');
+
+					callCommand(findCommand(robot, cmd), msg);
+
+					sinon.assert.called(msg.topic);
+
+					msg.topic.restore();
+				});
+			});
+		});
+
 		describe('when uhoh is set', function () {
 			beforeEach(function () {
 				var cmd, msg;
@@ -1647,8 +1720,10 @@ describe('pushbot', function () {
 				msg = createMessage(robot, cmd, room, userName, userId);
 				callCommand(findCommand(robot, cmd), msg);
 			});
+
 			afterEach(function () {
 			});
+
 			describe('user tries to change session state', function () {
 				var cmd, msg;
 

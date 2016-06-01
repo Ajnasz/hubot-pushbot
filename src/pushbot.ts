@@ -89,6 +89,7 @@ module.exports = (robot: Robot) => {
 		unhold: ['unhold'],
 		uhoh: ['uhoh', 'notgood', 'bad', 'fuck', 'fucked'],
 		good: ['good', 'ok', 'in', 'go', 'great'],
+		spectate: ['spectate'],
 		nevermind: ['leave', 'nevermind', 'nm'],
 		message: ['message'],
 		kick: ['kick'],
@@ -107,7 +108,8 @@ module.exports = (robot: Robot) => {
 
 	const bot: string = '.',
 		goodUserMarker: string = '✓',
-		holdingUserMarker: string = '✗';
+		holdingUserMarker: string = '✗',
+		spectateUserMarker: string = '☺';
 
 	// has permission a <user> to do <action> in <session>
 	function hasPermission(user: string, action: Action, session: Session.Session): boolean {
@@ -151,6 +153,8 @@ module.exports = (robot: Robot) => {
 				return `${goodUserMarker}${userName}`;
 			} else if (user.isHolding()) {
 				return `${holdingUserMarker}${userName}`;
+			} else if (user.isSpectating()) {
+				return `${spectateUserMarker}${userName}`;
 			} else {
 				return userName;
 			}
@@ -673,6 +677,21 @@ module.exports = (robot: Robot) => {
 		}
 	}
 
+	function onSpectateCommand(msg: Msg): void {
+		let {room, userName} = extractMsgDetails(msg);
+
+		let err = setUserState(room, userName, User.UserState.Spectate);
+
+		if (err) {
+			if (!(err instanceof PushbotErrors.NotChangedError)) {
+				msg.reply(err.message);
+				robot.logger.error('.spectate:', err);
+			}
+		} else {
+			setTopic(msg);
+		}
+	}
+
 	function onHoldCommand(msg: Msg): void {
 		robot.logger.debug('COMMANBD HOLD');
 		let room = msg.message.room;
@@ -824,6 +843,9 @@ module.exports = (robot: Robot) => {
 
 	// .uhoh command
 	robot.hear(createCommandRegexp(commands.uhoh), onUhOhCommand);
+
+	// .spectate command
+	robot.hear(createCommandRegexp(commands.spectate), onSpectateCommand);
 
 	// .hold command
 	robot.hear(createCommandRegexp(commands.hold, messageRegexp), onHoldCommand);
