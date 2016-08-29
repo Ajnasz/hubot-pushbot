@@ -32,20 +32,23 @@
 /// <reference path="Brain.ts" />
 /// <reference path="util.ts" />
 
-var XRegExp = require('xregexp').XRegExp;
+var XRegExp = require('xregexp');
 
 function createAction(name: string): Action {
+	let output;
 	switch (name) {
 		case 'kick':
-			return new KickAction();
+			output = new KickAction();
 			break;
 
 		case 'done':
-			return new DoneAction();
+			output = new DoneAction();
 			break;
+		default:
+			output = null;
 	}
 
-	return null;
+	return output;
 }
 
 const defaultMessage = '-';

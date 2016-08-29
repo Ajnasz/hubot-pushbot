@@ -11,6 +11,8 @@ module Session {
 		state: string;
 		message: string;
 		leader: string;
+		holded: boolean;
+		holdMessage: string;
 		users: SessionUser[];
 	}
 

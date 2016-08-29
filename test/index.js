@@ -10,7 +10,8 @@ var pushbot = require('../src/pushbot');
 var UserStates = {
 	Good: 0,
 	Uhoh: 1,
-	Waiting: 2
+	Waiting: 2,
+	Spectate: 3
 };
 
 function rand() {
