@@ -1,26 +1,24 @@
 /*jshint node: true*/
 module.exports = function (grunt) {
 	'use strict';
-	grunt.loadNpmTasks('grunt-typescript');
-	grunt.loadNpmTasks('grunt-release');
-	grunt.loadNpmTasks('grunt-contrib-concat');
-	grunt.loadNpmTasks('grunt-contrib-clean');
-	grunt.loadNpmTasks('grunt-mocha-test');
-	grunt.loadNpmTasks('grunt-blanket');
+	grunt.task.loadNpmTasks('grunt-ts');
+	grunt.task.loadNpmTasks('grunt-release');
+	grunt.task.loadNpmTasks('grunt-contrib-concat');
+	grunt.task.loadNpmTasks('grunt-contrib-clean');
+	grunt.task.loadNpmTasks('grunt-mocha-test');
 
 	grunt.initConfig({
-		typescript: {
+		ts: {
+			options: {
+				target: 'ES5'
+			},
 			base: {
 				src: 'src/pushbot.ts',
 				dest: 'src/pushbot-out.js',
-				target: 'ES5',
-				module: 'commonjs'
 			},
 			index: {
 				src: 'index.ts',
 				dest: 'index.js',
-				target: 'ES5',
-				module: 'commonjs'
 			}
 		},
 		concat: {
@@ -60,6 +58,6 @@ module.exports = function (grunt) {
 		}
 	});
 
-	grunt.registerTask('compile', ['typescript', 'concat', 'clean']);
+	grunt.registerTask('compile', ['ts', 'concat', 'clean']);
 	grunt.registerTask('test', ['mochaTest:test', 'mochaTest:travis-cov']);
 };
