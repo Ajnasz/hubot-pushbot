@@ -1,6 +1,6 @@
 {
   "name": "hubot-pushbot",
-  "version": "0.7.1",
+  "version": "0.7.3",
   "description": "PushBot implementation for hubot which is: \"PushBot is an IRC bot that manages the topic in an IRC channel that has a push train.\"",
   "main": "index.js",
   "typescript": {
@@ -24,13 +24,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "grunt": "^1.0.1",
-    "grunt-cli": "^1.2.0",
-    "grunt-contrib-clean": "^1.0.0",
-    "grunt-contrib-concat": "^1.0.1",
-    "grunt-ts": "^6.0.0-beta.3",
-    "typescript": "^1.8.10",
-    "xregexp": "^3.1.1"
   },
   "maintainers": [
     {
@@ -40,12 +33,19 @@
   ],
   "scripts": {
     "test": "$(npm bin)/grunt test",
-    "install": "$(npm bin)/grunt compile"
+    "prepublish": "$(npm bin)/grunt compile"
   },
   "engines": {
     "node": ">= 0.10.x"
   },
   "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-cli": "^1.2.0",
+    "grunt-contrib-clean": "^1.0.0",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-ts": "^6.0.0-beta.3",
+    "typescript": "^1.8.10",
+    "xregexp": "^3.1.1",
     "blanket": "^1.2.3",
     "chai": "^3.5.0",
     "grunt-mocha-test": "^0.12.7",
