@@ -1,10 +1,10 @@
 {
   "name": "hubot-pushbot",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "PushBot implementation for hubot which is: \"PushBot is an IRC bot that manages the topic in an IRC channel that has a push train.\"",
   "files": [
-	  "index.js",
-	  "src/pushbot.js"
+    "index.js",
+    "src/pushbot.js"
   ],
   "typescript": {
     "main": "index.ts"
