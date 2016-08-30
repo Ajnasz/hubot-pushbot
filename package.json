@@ -2,7 +2,10 @@
   "name": "hubot-pushbot",
   "version": "0.7.4",
   "description": "PushBot implementation for hubot which is: \"PushBot is an IRC bot that manages the topic in an IRC channel that has a push train.\"",
-  "main": "index.js",
+  "files": [
+	  "index.js",
+	  "src/pushbot.js"
+  ],
   "typescript": {
     "main": "index.ts"
   },
@@ -23,7 +26,9 @@
     "name": "Lajos Koszti"
   },
   "license": "MIT",
-  "dependencies": {},
+  "dependencies": {
+    "xregexp": "^3.1.1"
+  },
   "maintainers": [
     {
       "name": "Ajnasz",
@@ -44,7 +49,6 @@
     "grunt-contrib-concat": "^1.0.1",
     "grunt-ts": "^6.0.0-beta.3",
     "typescript": "^1.8.10",
-    "xregexp": "^3.1.1",
     "blanket": "^1.2.3",
     "chai": "^3.5.0",
     "grunt-mocha-test": "^0.12.7",

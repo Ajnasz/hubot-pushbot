@@ -10,7 +10,8 @@ module.exports = function (grunt) {
 	grunt.initConfig({
 		ts: {
 			options: {
-				target: 'ES5'
+				target: 'ES5',
+				sourceMap: false
 			},
 			base: {
 				src: 'src/pushbot.ts',
