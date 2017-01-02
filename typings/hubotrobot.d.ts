@@ -15,11 +15,20 @@ declare class Logger {
 	debug(...args: any[]): void;
 }
 
+declare class Adapter {
+	send(envelope: Object, ...string);
+	emote(envelope: Object, ...string);
+	reply(envelope: Object, ...string);
+	topic(envelope: Object, ...string);
+	play(envelope: Object, ...string);
+}
+
 declare class Robot {
 	brain: HubotBrain;
 	logger: Logger;
 	hear(command: RegExp, callback: Callback): void;
 	respond(command: RegExp, callback: Callback): void;
+	adapter: Adapter;
 }
 
 declare class MsgUser {
@@ -37,4 +46,6 @@ declare class Msg {
 	reply(m: string);
 	send(m: string);
 	topic(m: string);
+	runWithMiddleware(m: string, options: Object, ...string);
+	robot: Robot;
 }

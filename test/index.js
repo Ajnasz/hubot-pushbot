@@ -34,7 +34,8 @@ var robotProto = {
 		on: function (ev, cb) {
 			cb();
 		}
-	}
+	},
+	adapter: {}
 };
 
 var msgProto = {
@@ -51,6 +52,10 @@ var msgProto = {
 	reply: function () {
 	},
 	send: function () {
+	},
+	runWithMiddleware: function (method) {
+		var args = Array.prototype.slice.call(arguments, 1);
+		this[method].apply(this, args);
 	}
 };
 
@@ -95,6 +100,7 @@ function createMessage(robot, message, room, userName, userId) {
 
 	if (item) {
 		msg = createMsg(item, message, room, userName, userId);
+		msg.robot = robot;
 	}
 
 	return msg;

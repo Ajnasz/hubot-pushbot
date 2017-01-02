@@ -194,6 +194,10 @@ module.exports = (robot: Robot) => {
 
 		robot.logger.debug('Set topic:', topic, 'room:', msg.message.room);
 
+		if ('setTopic' in msg.robot.adapter) {
+			return msg.runWithMiddleware('setTopic', {plaintext: true}, topic);
+		}
+
 		return msg.topic(topic);
 	}
 	// HELPERS END
